@@ -9,309 +9,322 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Flowar
 {
-    public class GameBase
-    {
-        public GameMain Game { get; set; }
-        public SpriteBatch SpriteBatch { get; set; }
-        public GraphicsDevice GraphicsDevice { get; set; }
-        public ContentManager ContentManager { get; set; }
-        protected Boolean ShowMiniMenu { get; set; }
+	public class GameBase
+	{
+		public GameMain Game { get; set; }
+		public SpriteBatch SpriteBatch { get; set; }
+		public GraphicsDevice GraphicsDevice { get; set; }
+		public ContentManager ContentManager { get; set; }
+		protected Boolean ShowMiniMenu { get; set; }
 
-        private Texture2D imgCenter;
-        private Texture2D imgMenu;
-        private Color colorCenter;
-        private int mapTransition = 0;
-        private TimeSpan initTime = TimeSpan.Zero;
-        protected Texture2D pixel;
-        private TimeSpan timeStartMenuOn;
-        private TimeSpan timeStartMenuOff;
-        protected float alphaMenu = 255f;
-        private int posMenu = 0;
-        private float timeChange = 500f;
+		private Texture2D imgCenter;
+		private Texture2D imgMenu;
+		private Color colorCenter;
+		private int mapTransition = 0;
+		private TimeSpan initTime = TimeSpan.Zero;
+		protected Texture2D pixel;
+		private TimeSpan timeStartMenuOn;
+		private TimeSpan timeStartMenuOff;
+		protected float alphaMenu = 255f;
+		private int posMenu = 0;
+		private float timeChange = 500f;
 
-        private List<ClickableImage> listClickableImage { get; set; }
-        private List<ClickableText> listClickableText { get; set; }
+		private List<ClickableZone> listClickableZone { get; set; }
 
-        private List<KeyManager> listKeys { get; set; }
+		private List<KeyManager> listKeys { get; set; }
 
-        private ButtonState mouseLeftButtonState { get; set; }
-        private ButtonState mouseRightButtonState { get; set; }
-        private ButtonState mouseMiddleButtonState { get; set; }
+		private int mouseWheelValue { get; set; }
+		private ButtonState mouseLeftButtonState { get; set; }
+		private ButtonState mouseRightButtonState { get; set; }
+		private ButtonState mouseMiddleButtonState { get; set; }
+		protected MouseState mouseState { get; set; }
+		protected KeyboardState keyboardState { get; set; }
 
-        public delegate void KeyPressedHandler(Keys key, GameTime gameTime);
-        public event KeyPressedHandler KeyPressed;
+		public delegate void KeyPressedHandler(Keys key, GameTime gameTime);
+		public event KeyPressedHandler KeyPressed;
 
-        public delegate void MouseLeftButtonClickedHandler(MouseState mouseState, GameTime gameTime);
-        public event MouseLeftButtonClickedHandler MouseLeftButtonClicked;
+		public delegate void MouseLeftButtonClickedHandler(MouseState mouseState, GameTime gameTime);
+		public event MouseLeftButtonClickedHandler MouseLeftButtonClicked;
 
-        public delegate void MouseRightButtonClickedHandler(MouseState mouseState, GameTime gameTime);
-        public event MouseRightButtonClickedHandler MouseRightButtonClicked;
+		public delegate void MouseRightButtonClickedHandler(MouseState mouseState, GameTime gameTime);
+		public event MouseRightButtonClickedHandler MouseRightButtonClicked;
 
-        public delegate void MouseMidddleButtonClickedHandler(MouseState mouseState, GameTime gameTime);
-        public event MouseMidddleButtonClickedHandler MouseMidddleButtonClicked;
+		public delegate void MouseMidddleButtonClickedHandler(MouseState mouseState, GameTime gameTime);
+		public event MouseMidddleButtonClickedHandler MouseMidddleButtonClicked;
 
-        public delegate void MenuAnimationCloseEndedHandler(GameTime gameTime);
-        public event MenuAnimationCloseEndedHandler MenuAnimationCloseEnded;
+		public delegate void MouseWheelChangeddHandler(MouseState mouseState, GameTime gameTime);
+		public event MouseWheelChangeddHandler MouseWheelChanged;
 
-        public delegate void MenuAnimationOpenEndedHandler(GameTime gameTime);
-        public event MenuAnimationOpenEndedHandler MenuAnimationOpenEnded;
+		public delegate void MenuAnimationCloseEndedHandler(GameTime gameTime);
+		public event MenuAnimationCloseEndedHandler MenuAnimationCloseEnded;
 
-        public GameBase(GameMain game, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
-        {
-            this.Game = game;
-            this.SpriteBatch = spriteBatch;
-            this.GraphicsDevice = graphicsDevice;
-            this.ContentManager = contentManager;
+		public delegate void MenuAnimationOpenEndedHandler(GameTime gameTime);
+		public event MenuAnimationOpenEndedHandler MenuAnimationOpenEnded;
 
-            this.listKeys = new List<KeyManager>();
-            this.listClickableImage = new List<ClickableImage>();
-            this.listClickableText = new List<ClickableText>();
-        }
+		public GameBase(GameMain game, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
+		{
+			this.Game = game;
+			this.SpriteBatch = spriteBatch;
+			this.GraphicsDevice = graphicsDevice;
+			this.ContentManager = contentManager;
 
-        public virtual void Init()
-        {
-            this.Init(false);
-        }
+			this.listKeys = new List<KeyManager>();
+			this.listClickableZone = new List<ClickableZone>();
+		}
 
-        public virtual void Init(bool showMenu)
-        {
-            //--- Initialisation des variables
-            timeStartMenuOn = TimeSpan.Zero;
-            timeStartMenuOff = TimeSpan.Zero;
-            initTime = TimeSpan.MinValue;
+		public virtual void Init()
+		{
+			this.Init(false);
+		}
 
-            if(showMenu)
-                posMenu = GraphicsDevice.Viewport.Height / 4;
-            //---
+		public virtual void Init(bool showMenu)
+		{
+			//--- Initialisation des variables
+			timeStartMenuOn = TimeSpan.Zero;
+			timeStartMenuOff = TimeSpan.Zero;
+			initTime = TimeSpan.MinValue;
 
-            //--- Création du pixel
-            pixel = new Texture2D(GraphicsDevice, 1, 1, 1, TextureUsage.Linear, SurfaceFormat.Color);
-            pixel.SetData<Color>(new Color[] { Color.White });
-            //---
+			if (showMenu)
+				posMenu = GraphicsDevice.Viewport.Height / 4;
+			//---
 
-            //--- Image centrale pour la transition entre niveaux
-            imgCenter = new Texture2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 1, TextureUsage.Linear, SurfaceFormat.Color);
-            colorCenter = new Color(0, 0, 0, 0);
-            mapTransition = 0;
-            //---
+			//--- Création du pixel
+			pixel = new Texture2D(GraphicsDevice, 1, 1, 1, TextureUsage.Linear, SurfaceFormat.Color);
+			pixel.SetData<Color>(new Color[] { Color.White });
+			//---
 
-            //----
-            //int taille = (GraphicsDevice.Viewport.Width) * (GraphicsDevice.Viewport.Height);
-            //Color[] data = new Color[taille];
+			//--- Image centrale pour la transition entre niveaux
+			imgCenter = new Texture2D(GraphicsDevice, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height, 1, TextureUsage.Linear, SurfaceFormat.Color);
+			colorCenter = new Color(0, 0, 0, 0);
+			mapTransition = 0;
+			//---
 
-            //for (int i = 0; i < taille; i++)
-            //    data[i] = new Color(0, 0, 0, 100);
+			//----
+			//int taille = (GraphicsDevice.Viewport.Width) * (GraphicsDevice.Viewport.Height);
+			//Color[] data = new Color[taille];
 
-            //imgCenter.SetData<Color>(data, 0, data.Length, SetDataOptions.Discard);
-            //---
+			//for (int i = 0; i < taille; i++)
+			//    data[i] = new Color(0, 0, 0, 100);
 
-            //--- Création du menu
-            imgMenu = new Texture2D(GraphicsDevice, GraphicsDevice.Viewport.Width, 50, 1, TextureUsage.Linear, SurfaceFormat.Color);
-            //---
+			//imgCenter.SetData<Color>(data, 0, data.Length, SetDataOptions.Discard);
+			//---
 
-            //---
-            Color[] data = new Color[imgMenu.Width * imgMenu.Height];
+			//--- Création du menu
+			imgMenu = new Texture2D(GraphicsDevice, GraphicsDevice.Viewport.Width, 50, 1, TextureUsage.Linear, SurfaceFormat.Color);
+			//---
 
-            for (int i = 0; i < imgMenu.Width * imgMenu.Height; i++)
-            {
-                if (i / imgMenu.Width >= imgMenu.Height - 3)
-                    data[i] = new Color(255, 255, 255);
-                else
-                    data[i] = new Color(0, 0, 0, 100);
-            }
+			//---
+			Color[] data = new Color[imgMenu.Width * imgMenu.Height];
 
-            imgMenu.SetData<Color>(data, 0, data.Length, SetDataOptions.Discard);
-            //---
-        }
+			for (int i = 0; i < imgMenu.Width * imgMenu.Height; i++)
+			{
+				if (i / imgMenu.Width >= imgMenu.Height - 3)
+					data[i] = new Color(255, 255, 255);
+				else
+					data[i] = new Color(0, 0, 0, 100);
+			}
 
-        #region Évènements
-        void keyManager_KeyPressed(Keys key, GameTime gameTime)
-        {
-            if (KeyPressed != null)
-                KeyPressed(key, gameTime);
-        }
-        #endregion
+			imgMenu.SetData<Color>(data, 0, data.Length, SetDataOptions.Discard);
+			//---
 
-        protected void StartMenuOn(GameTime gameTime)
-        {
-            timeStartMenuOn = gameTime.TotalGameTime;
-        }
+			//--- Valeurs par défaut
+			mouseWheelValue = -1;
+			//---
+		}
 
-        protected void StartMenuOff(GameTime gameTime)
-        {
-            timeStartMenuOff = gameTime.TotalGameTime;
-        }
+		#region Évènements
+		void keyManager_KeyPressed(Keys key, GameTime gameTime)
+		{
+			if (KeyPressed != null)
+				KeyPressed(key, gameTime);
+		}
+		#endregion
 
-        protected void AddKeys(Keys key)
-        {
-            KeyManager keyManager = new KeyManager(key);
-            this.listKeys.Add(keyManager);
+		protected void StartMenuOn(GameTime gameTime)
+		{
+			timeStartMenuOn = gameTime.TotalGameTime;
+		}
 
-            keyManager.KeyPressed += new KeyManager.KeyPressedHandler(keyManager_KeyPressed);
-        }
+		protected void StartMenuOff(GameTime gameTime)
+		{
+			timeStartMenuOff = gameTime.TotalGameTime;
+		}
 
-        protected void AddClickableImage(ClickableImage clickableImage)
-        {
-            this.listClickableImage.Add(clickableImage);
-        }
+		protected void AddKeys(Keys key)
+		{
+			KeyManager keyManager = new KeyManager(key);
+			this.listKeys.Add(keyManager);
 
-        protected void AddClickableText(ClickableText clickableText)
-        {
-            this.listClickableText.Add(clickableText);
-        }
-        
-        public virtual void Update(GameTime gameTime)
-        {
-            if (Game.IsActive)
-            {
-                KeyboardState keyboardState = Keyboard.GetState();
-                MouseState mouseState = Mouse.GetState();
+			keyManager.KeyPressed += new KeyManager.KeyPressedHandler(keyManager_KeyPressed);
+		}
 
-                //---
-                for (int i = 0; i < listKeys.Count; i++)
-                {
-                    listKeys[i].Update(keyboardState, gameTime);
-                }
+		protected void AddClickableZone(ClickableZone clickableZone)
+		{
+			this.listClickableZone.Add(clickableZone);
+		}
 
-                if (MouseLeftButtonClicked != null && mouseLeftButtonState == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
-                    MouseLeftButtonClicked(mouseState, gameTime);
+		public virtual void Update(GameTime gameTime)
+		{
+			if (Game.IsActive)
+			{
+				keyboardState = Keyboard.GetState();
+				mouseState = Mouse.GetState();
 
-                if (MouseRightButtonClicked != null && mouseRightButtonState == ButtonState.Pressed && mouseState.RightButton == ButtonState.Released)
-                    MouseRightButtonClicked(mouseState, gameTime);
+				//---
+				for (int i = 0; i < listKeys.Count; i++)
+				{
+					listKeys[i].Update(keyboardState, gameTime);
+				}
 
-                if (MouseMidddleButtonClicked != null && mouseMiddleButtonState == ButtonState.Pressed && mouseState.MiddleButton == ButtonState.Released)
-                    MouseMidddleButtonClicked(mouseState, gameTime);
+				if (MouseLeftButtonClicked != null && mouseLeftButtonState == ButtonState.Pressed && mouseState.LeftButton == ButtonState.Released)
+					MouseLeftButtonClicked(mouseState, gameTime);
 
-                mouseLeftButtonState = mouseState.LeftButton;
-                mouseRightButtonState = mouseState.RightButton;
-                mouseMiddleButtonState = mouseState.MiddleButton;
-                //---
+				if (MouseRightButtonClicked != null && mouseRightButtonState == ButtonState.Pressed && mouseState.RightButton == ButtonState.Released)
+					MouseRightButtonClicked(mouseState, gameTime);
 
-                //---
-                for (int i = 0; i < listClickableImage.Count; i++)
-                {
-                    listClickableImage[i].UpdateMouse(mouseState, gameTime);
-                }
-                //---
+				if (MouseMidddleButtonClicked != null && mouseMiddleButtonState == ButtonState.Pressed && mouseState.MiddleButton == ButtonState.Released)
+					MouseMidddleButtonClicked(mouseState, gameTime);
+				
+				if(mouseWheelValue == -1)
+					mouseWheelValue = mouseState.ScrollWheelValue;
 
-                //---
-                for (int i = 0; i < listClickableText.Count; i++)
-                {
-                    listClickableText[i].UpdateMouse(mouseState, gameTime);
-                }
-                //---
+				if (mouseState.ScrollWheelValue != mouseWheelValue)
+				{
+					mouseWheelValue = mouseState.ScrollWheelValue;
+					MouseWheelChanged(mouseState, gameTime);
+				}
 
-                //---
-                UpdateMenuOn(gameTime);
-                UpdateMenuOff(gameTime);
-                //---
-            }
+				mouseLeftButtonState = mouseState.LeftButton;
+				mouseRightButtonState = mouseState.RightButton;
+				mouseMiddleButtonState = mouseState.MiddleButton;
+				//---
 
-            //--- Gestion du fond des transitions
-            if (initTime == TimeSpan.Zero)
-                initTime = gameTime.TotalGameTime;
+				//---
+				for (int i = 0; i < listClickableZone.Count; i++)
+				{
+					listClickableZone[i].UpdateMouse(mouseState, gameTime);
+				}
+				//---
 
-            if (mapTransition == 1)
-            {
-                if (colorCenter.A < 250)
-                {
-                    byte alpha = (byte)((byte)(gameTime.TotalGameTime.Subtract(initTime).TotalMilliseconds / 2));
-                    colorCenter = new Color(0, 0, 0, alpha);
-                }
-                else
-                {
+				//---
+				UpdateMenuOn(gameTime);
+				UpdateMenuOff(gameTime);
+				//---
+			}
 
-                }
-            }
-            else if (mapTransition == 2)
-            {
-                if (colorCenter.A > 0)
-                {
-                    int alpha = 250 - (int)(gameTime.TotalGameTime.Subtract(initTime).TotalMilliseconds / 2);
-                    if (alpha < 0) alpha = 0;
+			//--- Gestion du fond des transitions
+			if (initTime == TimeSpan.Zero)
+				initTime = gameTime.TotalGameTime;
 
-                    colorCenter = new Color(0, 0, 0, (byte)alpha);
-                }
-                else
-                {
-                    mapTransition = 0;
-                }
-            }
-            //---
-        }
+			if (mapTransition == 1)
+			{
+				if (colorCenter.A < 250)
+				{
+					byte alpha = (byte)((byte)(gameTime.TotalGameTime.Subtract(initTime).TotalMilliseconds / 2));
+					colorCenter = new Color(0, 0, 0, alpha);
+				}
+				else
+				{
 
-        private void UpdateMenuOn(GameTime gameTime)
-        {
-            if (timeStartMenuOn != TimeSpan.Zero)
-            {
-                int deltaMs = (int)gameTime.TotalGameTime.Subtract(timeStartMenuOn).TotalMilliseconds;
+				}
+			}
+			else if (mapTransition == 2)
+			{
+				if (colorCenter.A > 0)
+				{
+					int alpha = 250 - (int)(gameTime.TotalGameTime.Subtract(initTime).TotalMilliseconds / 2);
+					if (alpha < 0) alpha = 0;
 
-                float pct = (float)deltaMs / timeChange;
+					colorCenter = new Color(0, 0, 0, (byte)alpha);
+				}
+				else
+				{
+					mapTransition = 0;
+				}
+			}
+			//---
+		}
 
-                if (pct < 1f)
-                {
-                    alphaMenu = (byte)(255 - (int)(pct * 255f));
+		private void UpdateMenuOn(GameTime gameTime)
+		{
+			if (timeStartMenuOn != TimeSpan.Zero)
+			{
+				int deltaMs = (int)gameTime.TotalGameTime.Subtract(timeStartMenuOn).TotalMilliseconds;
 
-                    posMenu = (int)((float)(GraphicsDevice.Viewport.Height / 4) * (pct));
-                }
-                else
-                {
-                    timeStartMenuOn = TimeSpan.Zero;
+				float pct = (float)deltaMs / timeChange;
 
-                    if (this.MenuAnimationOpenEnded != null)
-                        this.MenuAnimationOpenEnded(gameTime);
-                }
-            }
-        }
+				if (pct < 1f)
+				{
+					alphaMenu = (byte)(255 - (int)(pct * 255f));
 
-        private void UpdateMenuOff(GameTime gameTime)
-        {
-            if (timeStartMenuOff != TimeSpan.Zero)
-            {
-                int deltaMs = (int)gameTime.TotalGameTime.Subtract(timeStartMenuOff).TotalMilliseconds;
+					posMenu = (int)((float)(GraphicsDevice.Viewport.Height / 4) * (pct));
+				}
+				else
+				{
+					timeStartMenuOn = TimeSpan.Zero;
 
-                float pct = (float)deltaMs / timeChange;
+					if (this.MenuAnimationOpenEnded != null)
+						this.MenuAnimationOpenEnded(gameTime);
+				}
+			}
+		}
 
-                if (pct < 1f)
-                {
-                    alphaMenu = (byte)(255 - (int)(pct * 255f));
-                    posMenu = (int)((float)(GraphicsDevice.Viewport.Height / 4) * (1f - pct));
-                }
-                else
-                {
-                    timeStartMenuOff = TimeSpan.Zero;
+		private void UpdateMenuOff(GameTime gameTime)
+		{
+			if (timeStartMenuOff != TimeSpan.Zero)
+			{
+				int deltaMs = (int)gameTime.TotalGameTime.Subtract(timeStartMenuOff).TotalMilliseconds;
 
-                    if (this.MenuAnimationCloseEnded != null)
-                        this.MenuAnimationCloseEnded(gameTime);
-                }
-            }
-        }
+				float pct = (float)deltaMs / timeChange;
 
-        public virtual void Draw(GameTime gameTime)
-        {
-            if (mapTransition != 0)
-            {
-                SpriteBatch.Draw(pixel, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), colorCenter);
-            }
+				if (pct < 1f)
+				{
+					alphaMenu = (byte)(255 - (int)(pct * 255f));
+					posMenu = (int)((float)(GraphicsDevice.Viewport.Height / 4) * (1f - pct));
+				}
+				else
+				{
+					timeStartMenuOff = TimeSpan.Zero;
 
-            if(ShowMiniMenu)
-                SpriteBatch.Draw(imgMenu, Vector2.Zero, Color.Black);
+					if (this.MenuAnimationCloseEnded != null)
+						this.MenuAnimationCloseEnded(gameTime);
+				}
+			}
+		}
 
-            for (int i = 0; i < listClickableImage.Count; i++)
-            {
-                listClickableImage[i].Draw(SpriteBatch, new Color(255, 255, 255, (byte)this.alphaMenu));
-            }
+		public virtual void Draw(GameTime gameTime)
+		{
+			if (mapTransition != 0)
+			{
+				SpriteBatch.Draw(pixel, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), colorCenter);
+			}
 
-            for (int i = 0; i < listClickableText.Count; i++)
-            {
-                listClickableText[i].Draw(SpriteBatch, new Color(255, 255, 255, (byte)this.alphaMenu));
-            }
+			if (ShowMiniMenu)
+				SpriteBatch.Draw(imgMenu, Vector2.Zero, Color.Black);
 
-            Rectangle recTop = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, posMenu);
-            Rectangle recBottom = new Rectangle(0, GraphicsDevice.Viewport.Height - posMenu, GraphicsDevice.Viewport.Width, posMenu);
+			for (int i = 0; i < listClickableZone.Count; i++)
+			{
+				//--- Debug ClickZone
+				//if (!(listClickableZone[i] is ClickableImage) && !(listClickableZone[i] is ClickableText))
+				//{
+				//    SpriteBatch.Draw(pixel, new Rectangle((int)listClickableZone[i].Position.X,
+				//                                            (int)listClickableZone[i].Position.Y,
+				//                                            listClickableZone[i].Width,
+				//                                            listClickableZone[i].Height), Color.GreenYellow);
+				//}
+				//---
 
-            SpriteBatch.Draw(pixel, recTop, Color.Black);
-            SpriteBatch.Draw(pixel, recBottom, Color.Black);
-        }
-    }
+				if (listClickableZone[i] is ClickableImage)
+					((ClickableImage)listClickableZone[i]).Draw(SpriteBatch, new Color(255, 255, 255, (byte)this.alphaMenu));
+				else if (listClickableZone[i] is ClickableText)
+					((ClickableText)listClickableZone[i]).Draw(SpriteBatch, new Color(255, 255, 255, (byte)this.alphaMenu));
+			}
+
+			Rectangle recTop = new Rectangle(0, 0, GraphicsDevice.Viewport.Width, posMenu);
+			Rectangle recBottom = new Rectangle(0, GraphicsDevice.Viewport.Height - posMenu, GraphicsDevice.Viewport.Width, posMenu);
+
+			SpriteBatch.Draw(pixel, recTop, Color.Black);
+			SpriteBatch.Draw(pixel, recBottom, Color.Black);
+		}
+	}
 }

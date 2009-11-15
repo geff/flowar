@@ -43,7 +43,8 @@ namespace Flowar
         {
             spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
 
-            this.GameCurrent = new GameMenu(this, this.spriteBatch, this.GraphicsDevice, this.Content);
+            //this.GameCurrent = new GameMenu(this, this.spriteBatch, this.GraphicsDevice, this.Content);
+            this.GameCurrent = new GameFlowar(this, this.spriteBatch, this.GraphicsDevice, this.Content);
 
             base.Initialize();
 

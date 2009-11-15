@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Case.cs" />
+    <Compile Include="ContextType.cs" />
     <Compile Include="FlowerType.cs" />
     <Compile Include="GameBase.cs" />
     <Compile Include="GameFlowar.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="GameMain.cs" />
     <Compile Include="Tools\ClickableImage.cs" />
     <Compile Include="Tools\ClickableText.cs" />
+    <Compile Include="Tools\ClickableZone.cs" />
     <Compile Include="Tools\Extensions.cs" />
     <Compile Include="Tools\KeyManager.cs" />
     <Compile Include="Tools\Lerp.cs" />

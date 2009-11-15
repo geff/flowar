@@ -8,5 +8,6 @@ namespace Flowar
     public class PlayerCard : ModelCard
     {
         public FlowerType FlowerType { get; set; }
+		public int Player { get; set; }
     }
 }

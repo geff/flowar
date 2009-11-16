@@ -40,7 +40,7 @@ namespace Flowar
 
 
 			ClickableText txtFlowar = new ClickableText(this, "Font0", "Font1", "floWAR", new Microsoft.Xna.Framework.Vector2(300, GraphicsDevice.Viewport.Height / 4 + 180));
-			txtFlowar.ClickZone += new ClickableZone.ClickZoneHandler(txtFlowar_ClickZone);
+			txtFlowar.Clicked += new ClickableZone.ClickZoneHandler(txtFlowar_ClickZone);
 
 			this.AddClickableZone(txtFlowar);
 

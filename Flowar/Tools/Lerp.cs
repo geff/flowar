@@ -82,8 +82,21 @@ namespace Flowar.Tools
 
                 ret = startValue;
             }
+			else if (
+				(ret >= Max && sens == 1) ||
+				(ret <= Max && sens == -1)
+			)
+			{
+				ret = Max;
+			}
+			
 
             return ret;
         }
+
+		public bool IsFinished(GameTime gameTime)
+		{
+			return Eval(gameTime) == Max;
+		}
     }
 }

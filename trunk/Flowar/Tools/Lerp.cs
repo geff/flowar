@@ -17,7 +17,6 @@ namespace Flowar.Tools
 
         private TimeSpan startTime;
         private float startValue;
-        private bool isLooping;
         private float sens;
 
         private bool stopped;
@@ -84,7 +83,7 @@ namespace Flowar.Tools
             }
 			else if (
 				(ret >= Max && sens == 1) ||
-				(ret <= Max && sens == -1)
+				(ret <= Max && sens == -1) && !this.Loop
 			)
 			{
 				ret = Max;

@@ -8,7 +8,7 @@ namespace Flowar
 {
     public static class MathFlowar
     {
-        //public static Vector2 IntersectionSegment(Vector2 point1, Vector2 point2, Vector2 point3, Vector2 point4)
+        ////public static Vector2 IntersectionSegment(Vector2 point1, Vector2 point2, Vector2 point3, Vector2 point4)
         //{
         //    Vector2 intersectionPoint = Vector2.Zero;
 

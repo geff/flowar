@@ -93,6 +93,7 @@
   <ItemGroup>
     <Compile Include="Case.cs" />
     <Compile Include="ContextType.cs" />
+    <Compile Include="CardType.cs" />
     <Compile Include="FlowerType.cs" />
     <Compile Include="GameBase.cs" />
     <Compile Include="GameFlowar.cs" />

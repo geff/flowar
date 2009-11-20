@@ -148,6 +148,7 @@ namespace Flowar
 		Lerp lerpCasePuttingDown;
 		#endregion
 
+		#region Constructeur / Init
 		public GameFlowar(GameMain game, SpriteBatch spriteBatch, GraphicsDevice graphicsDevice, ContentManager contentManager)
 			: base(game, spriteBatch, graphicsDevice, contentManager)
 		{
@@ -197,8 +198,10 @@ namespace Flowar
 			//---
 
 			base.Init();
-		}
+		} 
+		#endregion
 
+		#region Évènements Input / Menu
 		void GameFlowar_MouseLeftButtonClicked(MouseState mouseState, GameTime gameTime)
 		{
 		}
@@ -253,13 +256,8 @@ namespace Flowar
 		void GameFlowar_KeyPressed(Keys key, GameTime gameTime)
 		{
 		}
+		#endregion
 
-
-		/// <summary>
-		/// Allows the game to run logic such as updating the world,
-		/// checking for collisions, gathering input, and playing audio.
-		/// </summary>
-		/// <param name="gameTime">Provides a snapshot of timing values.</param>
 		public override void Update(GameTime gameTime)
 		{
 
@@ -313,29 +311,6 @@ namespace Flowar
 			CreateCardClickableZone();
 
 			NextPlayerToPlay();
-		}
-
-		private void CreateCardClickableZone()
-		{
-			Vector2 posDeck = new Vector2(posMap.X + Map.Width * caseSize + marge, posMap.Y);
-
-
-			for (int numberPlayer = 1; numberPlayer <= ListAllPlayerColor.Keys.Count; numberPlayer++)
-			{
-				for (int numCard = 0; numCard < ListAllPlayerCard[numberPlayer].Count; numCard++)
-				{
-					Vector2 posCard = posDeck + new Vector2(
-						numCard * (smallMarge + widthPlayerCard * caseSize * scale),
-						(caseSize * scale * heightPlayerCard + marge) * (numberPlayer - 1));
-
-					ClickableZone clickableCardZone = new ClickableZone(posCard, (int)(caseSize * scale * widthPlayerCard), (int)(caseSize * scale * heightPlayerCard));
-					clickableCardZone.Tag = ListAllPlayerCard[numberPlayer][numCard];
-
-					clickableCardZone.Clicked += new ClickableZone.ClickZoneHandler(clickableCardZone_ClickZone);
-
-					this.AddClickableZone(clickableCardZone);
-				}
-			}
 		}
 
 		private void CreateMap()
@@ -454,6 +429,28 @@ namespace Flowar
 				playerCard.CardType = CardType.None;
 
 				ListAllPlayerCard[numberPlayer].Add(playerCard);
+			}
+		}
+
+		private void CreateCardClickableZone()
+		{
+			Vector2 posDeck = new Vector2(posMap.X + Map.Width * caseSize + marge, posMap.Y);
+
+			for (int numberPlayer = 1; numberPlayer <= ListAllPlayerColor.Keys.Count; numberPlayer++)
+			{
+				for (int numCard = 0; numCard < ListAllPlayerCard[numberPlayer].Count; numCard++)
+				{
+					Vector2 posCard = posDeck + new Vector2(
+						numCard * (smallMarge + widthPlayerCard * caseSize * scale),
+						(caseSize * scale * heightPlayerCard + marge) * (numberPlayer - 1));
+
+					ClickableZone clickableCardZone = new ClickableZone(posCard, (int)(caseSize * scale * widthPlayerCard), (int)(caseSize * scale * heightPlayerCard));
+					clickableCardZone.Tag = ListAllPlayerCard[numberPlayer][numCard];
+
+					clickableCardZone.Clicked += new ClickableZone.ClickZoneHandler(clickableCardZone_ClickZone);
+
+					this.AddClickableZone(clickableCardZone);
+				}
 			}
 		}
 
@@ -813,6 +810,7 @@ namespace Flowar
 			if (allCaseArePuttingDown)
 				NextPlayerToPlay();
 		}
+
 		private void NextPlayerToPlay()
 		{
 			contextType = ContextType.None;
@@ -826,10 +824,6 @@ namespace Flowar
 		}
 
 		#region Drawing
-		/// <summary>
-		/// This is called when the game should draw itself.
-		/// </summary>
-		/// <param name="gameTime">Provides a snapshot of timing values.</param>
 		public override void Draw(GameTime gameTime)
 		{
 			GraphicsDevice.Clear(new Color(20, 20, 20));
@@ -872,6 +866,59 @@ namespace Flowar
 			//---
 		}
 
+		private void DrawMap()
+		{
+			float scale = 1f;
+			Vector2 centerCase = new Vector2(caseSize / 2f);
+
+			for (int x = 0; x < Map.Width; x++)
+			{
+				for (int y = 0; y < Map.Height; y++)
+				{
+					if (Map.Cases[x, y] != null && Map.Cases[x, y].Player > 0)
+					{
+						Case mapCase = Map.Cases[x, y];
+						int caseValue = Map.DrawingCaseValue[x, y];
+
+						if (caseValue >= 0)
+						{
+							Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
+
+							//--- Affiche la case
+							DrawCase(mapCase, caseValue, GetColorFlower(mapCase.FlowerType), ListAllPlayerColor[mapCase.Player], posMap + posCard + centerCase, scale);
+
+							//---> Affiche les valeurs
+							DrawCaseValuesMap(mapCase, posMap + posCard, scale);
+						}
+					}
+					else
+					{
+						Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
+
+						//--- Affiche le fond
+						SpriteBatch.Draw(
+							tex2DGround,
+							posMap + posCard + new Vector2(caseSize) * (scale + 0.1f) / 2f,
+							null,
+							Color.Peru,
+							0f, new Vector2(caseSize) * (scale + 0.1f) / 2f, scale + 0.1f, SpriteEffects.None, 0f
+							);
+						//---
+
+						//--- Affiche le fond
+						SpriteBatch.Draw(
+							tex2DGround,
+							posMap + posCard,
+							null,
+							Color.SaddleBrown,
+							0f, Vector2.Zero, scale, SpriteEffects.None, 0f
+							);
+						//---
+					}
+				}
+			}
+		}
+		
 		private void DrawPlayerCards(int numberPlayer)
 		{
 			Vector2 posDeck = new Vector2(posMap.X + Map.Width * caseSize + marge, posMap.Y);
@@ -983,101 +1030,6 @@ namespace Flowar
 			}
 		}
 
-		private Color GetColorFlower(FlowerType flowerType)
-		{
-			Color color = Color.White;
-
-			switch (flowerType)
-			{
-				case FlowerType.None:
-					break;
-				case FlowerType.Red:
-					color = Color.LightCoral;
-					break;
-				case FlowerType.Green:
-					color = Color.LightGreen;
-					break;
-				case FlowerType.Blue:
-					color = Color.LightSkyBlue;
-					break;
-				default:
-					break;
-			}
-
-			return color;
-		}
-
-		private void DrawMap()
-		{
-			float scale = 1f;
-
-			for (int x = 0; x < Map.Width; x++)
-			{
-				for (int y = 0; y < Map.Height; y++)
-				{
-					if (Map.Cases[x, y] != null && Map.Cases[x, y].Player > 0)
-					{
-						Case mapCase = Map.Cases[x, y];
-						int caseValue = Map.DrawingCaseValue[x, y];
-
-						if (caseValue >= 0)
-						{
-							Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
-
-							//--- Affiche le fond
-							SpriteBatch.Draw(
-								tex2DGround,
-								posMap + posCard,
-								null,
-								GetColorFlower(mapCase.FlowerType),
-								0f, Vector2.Zero, scale, SpriteEffects.None, 0f
-								);
-							//---
-
-							//--- Affiche le contour de la case
-							Texture2D texCase = ContentManager.Load<Texture2D>(String.Format(@"Content\Pic\{0}", caseValue));
-
-							SpriteBatch.Draw(
-								texCase,
-								posMap + posCard,
-								null,
-								ListAllPlayerColor[mapCase.Player],
-								0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
-							//---
-
-							//--- Affiche les valeurs
-							DrawCaseMap(mapCase, posMap + posCard, scale);
-							//---
-						}
-					}
-					else
-					{
-						Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
-
-						//--- Affiche le fond
-						SpriteBatch.Draw(
-							tex2DGround,
-							posMap + posCard + new Vector2(caseSize) * (scale + 0.1f) / 2f,
-							null,
-							Color.Peru,
-							0f, new Vector2(caseSize) * (scale + 0.1f) / 2f, scale + 0.1f, SpriteEffects.None, 0f
-							);
-						//---
-
-						//--- Affiche le fond
-						SpriteBatch.Draw(
-							tex2DGround,
-							posMap + posCard,
-							null,
-							Color.SaddleBrown,
-							0f, Vector2.Zero, scale, SpriteEffects.None, 0f
-							);
-						//---
-					}
-				}
-			}
-		}
-
 		private void DrawSelectedCardOverMap()
 		{
 			int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
@@ -1092,66 +1044,44 @@ namespace Flowar
 			{
 				for (int y = 0; y < height; y++)
 				{
-					Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale) + centerCase;
+					Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
+					Vector2 posCorner = posMap + posCard + vecPosSelectedCardOnMap;
 
-					Case caseCard = cloneSelectedCard.Cases[x,y];
-					Case caseMap =Map.Cases[posSelectedCardOnMap.X+x,posSelectedCardOnMap.Y+y];
+					Case caseCard = cloneSelectedCard.Cases[x, y];
+					Case caseMap = Map.Cases[posSelectedCardOnMap.X + x, posSelectedCardOnMap.Y + y];
 
-
-					//---> Nouvelle installation
 					if (caseCard != null)
 					{
 						int caseValue = cloneSelectedCard.DrawingCaseValue[x, y];
 
+						//---> Conflit
+						if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player != currentPlayer)
+						{
+							//--- Affiche la case
+							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), Color.Gray, posCorner + centerCase, scale);
 
-						//--- Affiche le fond
-						SpriteBatch.Draw(
-							tex2DGround,
-							posMap + posCard + vecPosSelectedCardOnMap,
-							null,
-							GetColorFlower(cloneSelectedCard.FlowerType),
-							0f,
-							//0f,
-							centerCase,
-							//Vector2.Zero,
-							scale, SpriteEffects.None, 0f
-							);
-						//---
-
-						//--- Affiche le contour de la case
-						Texture2D texCase = ContentManager.Load<Texture2D>(String.Format(@"Content\Pic\{0}", caseValue));
-
-						SpriteBatch.Draw(
-							texCase,
-							posMap + posCard + vecPosSelectedCardOnMap,
-							null,
-							ListAllPlayerColor[currentPlayer],
-							0f,
-							//0f,
-							centerCase,
-							//Vector2.Zero,
-							scale, SpriteEffects.None, 0f);
-						//---
+							//---> Affiche les valeurs
+							DrawCaseValuesConflict(caseMap, caseCard, posCorner, scale);
+						}
+						//---> Renfort
+						else if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player == currentPlayer)
+						{
+							//--- Affiche la case
+							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCorner + centerCase, scale);
 
 
-					}
+							//---> Affiche les valeurs
+							DrawCaseValuesRenfort(caseMap, caseCard, posCorner, scale);
+						}
+						//---> Nouvelle installation
+						else
+						{
+							//--- Affiche la case
+							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCorner + centerCase, scale);
 
-					//---> Conflit
-					if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player != currentPlayer)
-					{
-						DrawCaseConflict(caseMap, caseCard, posMap + posCard + vecPosSelectedCardOnMap - centerCase, scale);
-					}
-					//---> Renfort
-					else if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player == currentPlayer)
-					{
-						DrawCaseRenfort(caseMap, caseCard, posMap + posCard + vecPosSelectedCardOnMap - centerCase, scale);
-					}
-					//---> Nouvelle installation
-					else if (caseCard != null)
-					{
-						//--- Affiche les valeurs
-						DrawCaseMap(caseCard, posMap + posCard + vecPosSelectedCardOnMap - centerCase, scale);
-						//---
+							//---> Affiche les valeurs
+							DrawCaseValuesMap(caseCard, posCorner, scale);
+						}
 					}
 				}
 			}
@@ -1180,73 +1110,106 @@ namespace Flowar
 						else
 							scale = 1f;
 
-						Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale) + centerCase;
+						Vector2 posCard = new Vector2(x * caseSize * scale, y * caseSize * scale);
+						Vector2 posCorner = posMap + posCard + vecPosSelectedCardOnMap;
 
-						//--- Affiche le fond
-						SpriteBatch.Draw(
-							tex2DGround,
-							posMap + posCard + vecPosSelectedCardOnMap,
-							null,
-							GetColorFlower(currentPlayerCard.FlowerType),
-							0f,
-							//0f,
-							centerCase,
-							//Vector2.Zero,
-							scale, SpriteEffects.None, 0f
-							);
-						//---
+						//--- Affiche la case
+						DrawCase(cloneSelectedCard.Cases[x, y], caseValue, GetColorFlower(currentPlayerCard.FlowerType), ListAllPlayerColor[currentPlayer], posCorner + centerCase * scale, scale);
 
-						//--- Affiche le contour de la case
-						Texture2D texCase = ContentManager.Load<Texture2D>(String.Format(@"Content\Pic\{0}", caseValue));
-
-						SpriteBatch.Draw(
-							texCase,
-							posMap + posCard + vecPosSelectedCardOnMap,
-							null,
-							ListAllPlayerColor[currentPlayer],
-							0f,
-							//0f,
-							centerCase,
-							//Vector2.Zero,
-							scale, SpriteEffects.None, 0f);
-						//---
+						//---> Affiche les valeurs
+						DrawCaseValuesMap(cloneSelectedCard.Cases[x, y], posCorner, scale);
 					}
 				}
 			}
 		}
 
-		private void DrawCaseMap(Case caseCard, Vector2 pos, float scale)
+		private void DrawCase(Case caseToDraw, int caseValue, Color colorBackground, Color colorBorder, Vector2 pos, float scale)
+		{
+			Vector2 centerCase = new Vector2(caseSize / 2f);
+
+			//--- Affiche le fond
+			SpriteBatch.Draw(
+				tex2DGround,
+				pos,
+				null,
+				colorBackground,
+				0f,
+				centerCase,
+				scale, SpriteEffects.None, 0f
+				);
+			//---
+
+			//--- Affiche le contour de la case
+			Texture2D texCase = ContentManager.Load<Texture2D>(String.Format(@"Content\Pic\{0}", caseValue));
+
+			SpriteBatch.Draw(
+				texCase,
+				pos,
+				null,
+				colorBorder,
+				0f,
+				centerCase,
+				scale, SpriteEffects.None, 0f);
+			//---
+
+		}
+
+		private void DrawCaseValuesMap(Case caseCard, Vector2 pos, float scale)
 		{
 			int width = (int)((float)caseSize * scale);
 			int height = (int)((float)caseSize * scale);
-
+			
 			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusDefenser * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.1f, (float)caseSize * scale * 0.75f), Color.Black);
 			SpriteBatch.DrawString(fontCase, caseCard.Defenser.ToString(), pos + new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.75f), Color.Black);
 			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.MalusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.7f, (float)caseSize * scale * 0.75f), Color.Black);
 		}
 
-		private void DrawCaseConflict(Case caseMap, Case caseCard, Vector2 pos, float scale)
+		private void DrawCaseValuesConflict(Case caseMap, Case caseCard, Vector2 pos, float scale)
 		{
 			int width = (int)((float)caseSize * scale);
 			int height = (int)((float)caseSize * scale);
 
-			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseMap.BonusDefenser * caseMap.Defenser ), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.1f, (float)caseSize * scale * 0.75f), Color.Black);
+			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseMap.BonusDefenser * caseMap.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.1f, (float)caseSize * scale * 0.75f), Color.Black);
 
 			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.7f, (float)caseSize * scale * 0.75f), Color.Black);
 		}
 
-		private void DrawCaseRenfort(Case caseMap, Case caseCard, Vector2 pos, float scale)
+		private void DrawCaseValuesRenfort(Case caseMap, Case caseCard, Vector2 pos, float scale)
 		{
 			int width = (int)((float)caseSize * scale);
 			int height = (int)((float)caseSize * scale);
 
-			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseMap.BonusDefenser * (caseMap.Defenser+caseCard.Defenser)), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.1f, (float)caseSize * scale * 0.75f), Color.Black);
+			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseMap.BonusDefenser * (caseMap.Defenser + caseCard.Defenser)), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.1f, (float)caseSize * scale * 0.75f), Color.Black);
 			SpriteBatch.DrawString(fontCase, (caseMap.Defenser + caseCard.Defenser).ToString(), pos + new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.75f), Color.Black);
 			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseMap.MalusStricker * (caseMap.Defenser + caseCard.Defenser)), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.7f, (float)caseSize * scale * 0.75f), Color.Black);
 		}
 
-		private void DrawCaseOnHand(Case caseCard)
+		private void DrawCaseValuesOnHand(Case caseCard)
 		{
+		}
+
+		private Color GetColorFlower(FlowerType flowerType)
+		{
+			Color color = Color.White;
+
+			switch (flowerType)
+			{
+				case FlowerType.None:
+					break;
+				case FlowerType.Red:
+					color = Color.LightCoral;
+					break;
+				case FlowerType.Green:
+					color = Color.LightGreen;
+					break;
+				case FlowerType.Blue:
+					color = Color.LightSkyBlue;
+					break;
+				default:
+					break;
+			}
+
+			return color;
 		}
 		#endregion
 
@@ -1301,12 +1264,14 @@ namespace Flowar
 
 		void mapZone_MouseLeave(ClickableZone zone, MouseState mouseState, GameTime gameTime)
 		{
+			//---> Le joueur a la carte en main et quitte la map
 			if (contextType == ContextType.CardOverMap)
 				contextType = ContextType.CardSelected;
 		}
 
 		void mapZone_Clicked(ClickableZone zone, MouseState mouseState, GameTime gameTime)
 		{
+			//---> Le joueur pose la carte sur la map
 			if (contextType == ContextType.CardOverMap)
 			{
 				PutDownSelectedCard();

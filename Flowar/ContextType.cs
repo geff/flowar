@@ -11,6 +11,7 @@ namespace Flowar
         CardSelected = 1,
 		CardRotated =2,
 		CardOverMap = 3,
-		PutDownCard = 4,
+		CardRotatedOverMap = 4,
+		PutDownCard = 5,
     }
 }

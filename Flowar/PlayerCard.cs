@@ -27,9 +27,14 @@ namespace Flowar
 
 		private void SetFlowerType(FlowerType flowerType)
 		{
-			for (int x = 0; x < 2; x++)
+			int width = Cases.GetUpperBound(0) + 1;
+			int height = Cases.GetUpperBound(1) + 1;
+
+			//Cases = new Case[width, height];
+
+			for (int x = 0; x < width; x++)
 			{
-				for (int y = 0; y < 4; y++)
+				for (int y = 0; y < height; y++)
 				{
 					if (this.Cases[x, y] != null)
 					{
@@ -43,9 +48,15 @@ namespace Flowar
 		{
 			PlayerCard modelCard = new PlayerCard();
 
-			for (int x = 0; x < 2; x++)
+			int width = Cases.GetUpperBound(0)+1;
+			int height = Cases.GetUpperBound(1)+1;
+
+			modelCard.Cases = new Case[width, height];
+			modelCard.DrawingCaseValue = new int[width, height];
+
+			for (int x = 0; x < width; x++)
 			{
-				for (int y = 0; y < 4; y++)
+				for (int y = 0; y < height; y++)
 				{
 					if (this.Cases[x, y] != null)
 					{

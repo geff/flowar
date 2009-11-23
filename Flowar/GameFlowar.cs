@@ -125,9 +125,9 @@ namespace Flowar
 		float scaleSelectedCard = 0.5f;
 
 		/// <summary>
-		/// Echelle de la case lorsque la carte est posée sur la map
+		/// Echelle de la carte lorsque'elle est posée sur la map
 		/// </summary>
-		float scaleCasePuttingDown = 0f;
+		float scaleCardPuttingDown = 0f;
 
 		/// <summary>
 		/// Générateur de nombres aléatoires
@@ -145,9 +145,9 @@ namespace Flowar
 		Lerp lerpRotation;
 
 		/// <summary>
-		/// Lerp de taille pour la case en cours lorsque la carte est posée sur la map
+		/// Lerp de taille de la carte lorsqu'elle est posée sur la map
 		/// </summary>;
-		Lerp lerpCasePuttingDown;
+		Lerp lerpScaleCardPuttingDown;
 
 		/// <summary>
 		/// Lerp Alpha pour la case en cours lorsque la carte est posée sur la map
@@ -159,11 +159,17 @@ namespace Flowar
 
 		Vector2 vecPosSelectedCardOnMap = Vector2.Zero;
 
+		int durationCardAnimation = 300;
+		int durationCardPuttingDown = 175;
 
-		int durationCardAnimation = 100;
 		float scaleMap = 1f;
+		float scaleCardOverMap = 1.15f;
 
-		Point oldCenterRotated = Point.Zero;
+		//Point oldCenterRotated = Point.Zero;
+		/// <summary>
+		/// Carte clonée avant animation
+		/// </summary>
+		PlayerCard oldCloneSelectedCard;
 		#endregion
 
 		#region Constructeur / Init
@@ -275,11 +281,12 @@ namespace Flowar
 				if (contextType == ContextType.CardOverMap)
 					contextType = ContextType.CardRotatedOverMap;
 
-				oldCenterRotated = cloneSelectedCard.Center;
+				//oldCenterRotated = cloneSelectedCard.Center;
+				oldCloneSelectedCard = cloneSelectedCard.Clone();
 
-				CalcTabSelectedCard();
+				CalcTabRotatedCard();
 
-				CalcCardPositionOverMap(mouseState, true);
+				CalcCardPositionOverMap(mouseState, true, true);
 			}
 
 			prevMouseWheel = mouseState.ScrollWheelValue;
@@ -321,7 +328,8 @@ namespace Flowar
 				if (lerpRotation.IsFinished(gameTime))
 				{
 					contextType = ContextType.CardOverMap;
-					oldCenterRotated = cloneSelectedCard.Center;
+					//TODO : voir si cette ligne de code est utile par la suite
+					oldCloneSelectedCard = cloneSelectedCard;
 				}
 			}
 
@@ -342,17 +350,24 @@ namespace Flowar
 			//---> Animation des cases lorsque la carte est posée sur la map
 			if (contextType == ContextType.PutDownCard)
 			{
-				if (currentCasePuttingDown == -1 ||
-					(lerpCasePuttingDown != null && lerpCasePuttingDown.IsFinished(gameTime)))
-				{
-					//--- Passe à la case suivante
-					lerpCasePuttingDown = new Lerp(0, 1f, false, false, 150, -1);
-					PutDownNextCase();
-					//---
-				}
+				//if (currentCasePuttingDown == -1 ||
+				//    (lerpCasePuttingDown != null && lerpCasePuttingDown.IsFinished(gameTime)))
+				//{
+				//    //--- Passe à la case suivante
+				//    lerpCasePuttingDown = new Lerp(0, 1f, false, false, 150, -1);
+				//    PutDownNextCase();
+				//    //---
+				//}
 
 				//---> Mise à l'échelle de la case en cours de pose
-				scaleCasePuttingDown = lerpCasePuttingDown.Eval(gameTime);
+				scaleCardPuttingDown = lerpScaleCardPuttingDown.Eval(gameTime);
+
+				if (lerpScaleCardPuttingDown.IsFinished(gameTime))
+				{
+					CalcMapAfterCardPuttingDown();
+
+					NextPlayerToPlay();
+				}
 			}
 
 			base.Update(gameTime);
@@ -404,6 +419,7 @@ namespace Flowar
 			modelCard.Cases[0, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[0, 2] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 2] = new Case() { FlowerType = FlowerType.None };
+			modelCard.CalcDimensions();
 
 			this.ListModelCard.Add(modelCard);
 			//---
@@ -417,6 +433,7 @@ namespace Flowar
 			modelCard.Cases[0, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 0] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 1] = new Case() { FlowerType = FlowerType.None };
+			modelCard.CalcDimensions();
 
 			this.ListModelCard.Add(modelCard);
 			//---
@@ -430,6 +447,7 @@ namespace Flowar
 			modelCard.Cases[0, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[0, 2] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[0, 3] = new Case() { FlowerType = FlowerType.None };
+			modelCard.CalcDimensions();
 
 			this.ListModelCard.Add(modelCard);
 			//---
@@ -443,6 +461,7 @@ namespace Flowar
 			modelCard.Cases[0, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[0, 2] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 1] = new Case() { FlowerType = FlowerType.None };
+			modelCard.CalcDimensions();
 
 			this.ListModelCard.Add(modelCard);
 			//---
@@ -456,6 +475,7 @@ namespace Flowar
 			modelCard.Cases[0, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 1] = new Case() { FlowerType = FlowerType.None };
 			modelCard.Cases[1, 2] = new Case() { FlowerType = FlowerType.None };
+			modelCard.CalcDimensions();
 
 			this.ListModelCard.Add(modelCard);
 			//---
@@ -593,7 +613,7 @@ namespace Flowar
 			}
 		}
 
-		private void CalcTabSelectedCard()
+		private void CalcTabRotatedCard()
 		{
 			cloneSelectedCard = currentPlayerCard.Clone();
 
@@ -732,11 +752,11 @@ namespace Flowar
 			//---
 		}
 
-		private Case GetCaseMapFromRotatedCard(int x, int y)
+		private Case GetCaseMapFromRotatedCard(int rotatedX, int rotatedY, int x, int y, int cardWidth, int cardHeight)
 		{
 			//---
-			int realWidth = Map.Width-1;
-			int realHeight = Map.Height-1;
+			int realWidth = Map.Width - 1;
+			int realHeight = Map.Height - 1;
 			//---
 
 			Case caseMap = null;
@@ -747,7 +767,7 @@ namespace Flowar
 			//---
 			if (cycleRotationCard == 0)
 			{
-				caseMap = Map.Cases[x, y];
+				caseMap = Map.Cases[rotatedX + x, rotatedY+y];
 			}
 
 			//--- Angle Pi/2
@@ -756,7 +776,7 @@ namespace Flowar
 			//---
 			if (cycleRotationCard == 1)
 			{
-				caseMap = Map.Cases[y, realHeight - x];
+				caseMap = Map.Cases[rotatedX + cardWidth - y-1, rotatedY +x];
 			}
 
 			//--- Angle Pi
@@ -765,7 +785,7 @@ namespace Flowar
 			//---
 			if (cycleRotationCard == 2)
 			{
-				caseMap = Map.Cases[realWidth - x, realHeight - y];
+				caseMap = Map.Cases[rotatedX + cardWidth - x-1, rotatedY + cardHeight - y-1];
 			}
 
 			//--- Angle 3 Pi/2
@@ -774,13 +794,18 @@ namespace Flowar
 			//---
 			if (cycleRotationCard == 3)
 			{
-				caseMap = Map.Cases[realWidth - y, x];
+				caseMap = Map.Cases[rotatedX + y, rotatedY +cardHeight- x-1];
 			}
 
 			return caseMap;
 		}
 
 		private void CalcCardPositionOverMap(MouseState mouseState, bool withAnimation)
+		{
+			CalcCardPositionOverMap(mouseState, withAnimation, false);
+		}
+
+		private void CalcCardPositionOverMap(MouseState mouseState, bool withAnimation, bool forcePosition)
 		{
 			Point position = Point.Zero;
 
@@ -792,12 +817,7 @@ namespace Flowar
 			//--- Case située au centre de la carte
 			int cx = cloneSelectedCard.Center.X;
 			int cy = cloneSelectedCard.Center.Y;
-
-			//int cx = currentPlayerCard.Center.X;
-			//int cy = currentPlayerCard.Center.Y;
 			//---
-
-			
 
 			//--- Marge sur les côtés par rapport au centre de la carte
 			int dxL = cx;
@@ -810,9 +830,6 @@ namespace Flowar
 			position.X = (mouseState.X - (int)posMap.X) / caseSize;
 			position.Y = (mouseState.Y - (int)posMap.Y) / caseSize;
 			//---
-
-			//position.X -= (oldCenterRotated.X - cloneSelectedCard.Center.X);
-			//position.Y -= (oldCenterRotated.Y - cloneSelectedCard.Center.Y);
 
 			if (position.X - dxL < 0)
 				position.X = 0;
@@ -828,17 +845,27 @@ namespace Flowar
 			else
 				position.Y -= cy;
 
+			//---
+			//int oldWidth = oldCloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
+			//int oldHeight = oldCloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
+
+			//Vector2 vecDeltascaleCardOverMap = new Vector2((oldWidth-width) * caseSize, (oldHeight-height) * caseSize) * (scaleMap) / 2f;
+			//---
+
 			//---> Déclenchement de l'animation de translation
-			if (position.X != posSelectedCardOnMap.X || 
+			if (forcePosition ||
+				position.X != posSelectedCardOnMap.X ||
 				position.Y != posSelectedCardOnMap.Y)
 			{
 				if (withAnimation)
 				{
 					Vector2 deltaCenterRotation = Vector2.Zero;
-					deltaCenterRotation.X = (oldCenterRotated.X - cloneSelectedCard.Center.X);
-					deltaCenterRotation.Y = (oldCenterRotated.Y - cloneSelectedCard.Center.Y);
+					deltaCenterRotation.X = (oldCloneSelectedCard.Center.X - cloneSelectedCard.Center.X);
+					deltaCenterRotation.Y = (oldCloneSelectedCard.Center.Y - cloneSelectedCard.Center.Y);
 
 					vecPosSelectedCardOnMap += (deltaCenterRotation * caseSize * scaleMap);
+					//if (forcePosition)
+					//    vecPosSelectedCardOnMap -= vecDeltascaleCardOverMap;
 
 					lerpCardTranslationX = new Lerp(vecPosSelectedCardOnMap.X, position.X * caseSize * scaleMap, false, false, durationCardAnimation, -1);
 					lerpCardTranslationY = new Lerp(vecPosSelectedCardOnMap.Y, position.Y * caseSize * scaleMap, false, false, durationCardAnimation, -1);
@@ -876,19 +903,22 @@ namespace Flowar
 		private void PutDownSelectedCard()
 		{
 			//--- Dimension de la carte
-			int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
-			int height = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
+			//int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
+			//int height = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
 			//---
 
 			//--- Change le contexte
 			contextType = ContextType.PutDownCard;
 			//---
 
+			scaleCardPuttingDown = scaleCardOverMap;
+			lerpScaleCardPuttingDown = new Lerp(scaleCardOverMap, scaleMap, false, false, durationCardPuttingDown, -1);
+
 			//---> Initialise la case courante à -1
-			currentCasePuttingDown = -1;
+			//currentCasePuttingDown = -1;
 		}
 
-		private void PutDownCurrentCase()
+		private void CalcMapAfterCardPuttingDown()
 		{
 			//--- Dimension de la carte
 			int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
@@ -896,83 +926,88 @@ namespace Flowar
 			//---
 
 			//--- Calcul de la position de la case
-			int y = (currentCasePuttingDown) / width;
-			int x = (currentCasePuttingDown) - y * width;
+			//int y = (currentCasePuttingDown) / width;
+			//int x = (currentCasePuttingDown) - y * width;
 			//---
 
-			//--- Détermine les cases de la map et de la carte en cours de pose
-			Case caseMap = Map.Cases[x + posSelectedCardOnMap.X, y + posSelectedCardOnMap.Y];
-			Case caseCard = cloneSelectedCard.Cases[x, y];
-			//---
-
-
-			float finalCardValue = 0f;
-			int finalPlayer = 0;
-			FlowerType finalFlowerType = FlowerType.None;
-
-			if (caseCard != null)
+			for (int x = 0; x < width; x++)
 			{
-				int caseValue = cloneSelectedCard.DrawingCaseValue[x, y];
-
-				//---> Conflit
-				if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player != currentPlayer)
+				for (int y = 0; y < height; y++)
 				{
-					float defenserValue = GetDefenserValue(caseMap, caseCard);
-					float strikerValue = GetStrikerValue(caseMap, caseCard);
-					float ratioSurviver = 1f;
-
-					//---> L'attaquant gagne
-					if (defenserValue < strikerValue)
-					{
-						ratioSurviver = (strikerValue - defenserValue) / strikerValue;
-
-						finalCardValue = caseCard.Defenser * ratioSurviver;
-						finalPlayer = caseCard.Player;
-						finalFlowerType = caseCard.FlowerType;
-					}
-					//---> Le défenseur gagne
-					else if (defenserValue > strikerValue)
-					{
-						finalCardValue = defenserValue - strikerValue;
-						finalPlayer = caseMap.Player;
-						finalFlowerType = caseMap.FlowerType;
-					}
-				}
-				//---> Renfort
-				else if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player == currentPlayer)
-				{
-					finalCardValue = caseMap.Defenser + caseCard.Defenser;
-					finalPlayer = caseMap.Player;
-					finalFlowerType = caseMap.FlowerType;
-				}
-				//---> Nouvelle installation
-				else
-				{
-					finalCardValue = caseCard.Defenser;
-					finalPlayer = caseCard.Player;
-					finalFlowerType = caseCard.FlowerType;
-
+					//--- Détermine les cases de la map et de la carte en cours de pose
+					Case caseMap = Map.Cases[x + posSelectedCardOnMap.X, y + posSelectedCardOnMap.Y];
+					Case caseCard = cloneSelectedCard.Cases[x, y];
 					//---
-					caseMap.BonusDefenser = caseCard.BonusDefenser;
-					caseMap.BonusStricker = caseCard.BonusStricker;
-					caseMap.Defenser = caseCard.Defenser;
-					caseMap.FlowerType = cloneSelectedCard.FlowerType;
-					caseMap.MalusDefenser = caseCard.MalusDefenser;
-					caseMap.MalusStricker = caseCard.MalusStricker;
-					caseMap.NumberFlower = caseCard.NumberFlower;
-					caseMap.NumberFlowerAdjacent = caseCard.NumberFlowerAdjacent;
-					caseMap.Player = currentPlayer;
-					caseMap.Stricker = caseCard.Stricker;
-					//---
+
+					float finalCardValue = 0f;
+					int finalPlayer = 0;
+					FlowerType finalFlowerType = FlowerType.None;
+
+					if (caseCard != null)
+					{
+						int caseValue = cloneSelectedCard.DrawingCaseValue[x, y];
+
+						//---> Conflit
+						if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player != currentPlayer)
+						{
+							float defenserValue = GetDefenserValue(caseMap, caseCard);
+							float strikerValue = GetStrikerValue(caseMap, caseCard);
+							float ratioSurviver = 1f;
+
+							//---> L'attaquant gagne
+							if (defenserValue < strikerValue)
+							{
+								ratioSurviver = (strikerValue - defenserValue) / strikerValue;
+
+								finalCardValue = caseCard.Defenser * ratioSurviver;
+								finalPlayer = caseCard.Player;
+								finalFlowerType = caseCard.FlowerType;
+							}
+							//---> Le défenseur gagne
+							else if (defenserValue > strikerValue)
+							{
+								finalCardValue = defenserValue - strikerValue;
+								finalPlayer = caseMap.Player;
+								finalFlowerType = caseMap.FlowerType;
+							}
+						}
+						//---> Renfort
+						else if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player == currentPlayer)
+						{
+							finalCardValue = caseMap.Defenser + caseCard.Defenser;
+							finalPlayer = caseMap.Player;
+							finalFlowerType = caseMap.FlowerType;
+						}
+						//---> Nouvelle installation
+						else
+						{
+							finalCardValue = caseCard.Defenser;
+							finalPlayer = caseCard.Player;
+							finalFlowerType = caseCard.FlowerType;
+
+							//---
+							caseMap.BonusDefenser = caseCard.BonusDefenser;
+							caseMap.BonusStricker = caseCard.BonusStricker;
+							caseMap.Defenser = caseCard.Defenser;
+							caseMap.FlowerType = cloneSelectedCard.FlowerType;
+							caseMap.MalusDefenser = caseCard.MalusDefenser;
+							caseMap.MalusStricker = caseCard.MalusStricker;
+							caseMap.NumberFlower = caseCard.NumberFlower;
+							caseMap.NumberFlowerAdjacent = caseCard.NumberFlowerAdjacent;
+							caseMap.Player = currentPlayer;
+							caseMap.Stricker = caseCard.Stricker;
+							//---
+						}
+
+						//--- Affecte les nouvelles valeurs de la carte
+						caseMap.Defenser = finalCardValue;
+						caseMap.FlowerType = finalFlowerType;
+						caseMap.Player = finalPlayer;
+						//TODO : mettrer les number flower
+						//--- 
+					}
+
 				}
-
-				//--- Affecte les nouvelles valeurs de la carte
-				caseMap.Defenser = finalCardValue;
-				caseMap.FlowerType = finalFlowerType;
-				caseMap.Player = finalPlayer;
-				//TODO : mettrer les number flower
-				//---
-
 
 				//--- Calcul la valeur de la bordure
 				int[,] drawingCaseValue = Map.DrawingCaseValue;
@@ -980,40 +1015,6 @@ namespace Flowar
 				Map.DrawingCaseValue = drawingCaseValue;
 				//---
 			}
-		}
-
-		private void PutDownNextCase()
-		{
-			//--- Dimension de la carte
-			int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
-			int height = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
-			//---
-
-			//--- Pose la case courante sur la map
-			if (currentCasePuttingDown > -1)
-				PutDownCurrentCase();
-			//---
-
-			bool allCaseArePuttingDown = true;
-
-			//--> Calcul de la prochaine case à poser
-			for (int y = 0; y < height && allCaseArePuttingDown; y++)
-			{
-				for (int x = 0; x < width && allCaseArePuttingDown; x++)
-				{
-					if (
-						y * width + x > currentCasePuttingDown &&
-						cloneSelectedCard.Cases[x, y] != null)
-					{
-						allCaseArePuttingDown = false;
-						currentCasePuttingDown = y * width + x;
-					}
-				}
-			}
-
-			//---> Si toutes les cases sont posées, alors c'est au joueur suivant
-			if (allCaseArePuttingDown)
-				NextPlayerToPlay();
 		}
 
 		private void NextPlayerToPlay()
@@ -1284,26 +1285,32 @@ namespace Flowar
 
 		private void DrawSelectedCardOverMap()
 		{
-			int width = currentPlayerCard.DrawingCaseValue.GetUpperBound(0) + 1;
-			int height = currentPlayerCard.DrawingCaseValue.GetUpperBound(1) + 1;
+			currentPlayerCard.CalcDimensions();
 
-			this.Game.Window.Title = cloneSelectedCard.Center.ToString();
+			int width = currentPlayerCard.Width;
+			int height = currentPlayerCard.Height;
 
-			float scale = 1f;
+			int realWidth = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
+			int realHeight = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
 
-			for (int x = 0; x < width; x++)
+			Vector2 vecDeltascaleCardOverMap = new Vector2(realWidth * caseSize, realHeight * caseSize) * (scaleCardOverMap - scaleMap) / 2f;
+
+			Vector2 centerCard = new Vector2((currentPlayerCard.Center.X + 0.5f) * caseSize * scaleCardOverMap, (currentPlayerCard.Center.Y + 0.5f) * caseSize * scaleCardOverMap);
+			Vector2 centerRotatedCard = new Vector2((cloneSelectedCard.Center.X + 0.5f) * caseSize * scaleCardOverMap, (cloneSelectedCard.Center.Y + 0.5f) * caseSize * scaleCardOverMap);
+
+			Vector2 posCard = posMap + vecPosSelectedCardOnMap + centerRotatedCard - vecDeltascaleCardOverMap;
+
+			this.Game.Window.Title = posCard.ToString();
+
+			for (int x = 0; x <= width; x++)
 			{
-				for (int y = 0; y < height; y++)
+				for (int y = 0; y <= height; y++)
 				{
-					Vector2 centerCard = new Vector2((currentPlayerCard.Center.X + 0.5f) * caseSize * scale, (currentPlayerCard.Center.Y + 0.5f) * caseSize * scale);
-					Vector2 centerRotatedCard = new Vector2((cloneSelectedCard.Center.X + 0.5f) * caseSize * scale, (cloneSelectedCard.Center.Y + 0.5f) * caseSize * scale);
-
-					Vector2 posCard = posMap + vecPosSelectedCardOnMap + centerRotatedCard;
-					Vector2 posCase = new Vector2(x * caseSize * scale, y * caseSize * scale);
+					Vector2 posCase = new Vector2(x * caseSize * scaleCardOverMap, y * caseSize * scaleCardOverMap);
 
 					Case caseCard = currentPlayerCard.Cases[x, y];
 
-					Case caseMap = GetCaseMapFromRotatedCard(x, y);
+					Case caseMap = GetCaseMapFromRotatedCard(posSelectedCardOnMap.X, posSelectedCardOnMap.Y, x, y, realWidth, realHeight);
 
 					if (caseCard != null)
 					{
@@ -1312,10 +1319,10 @@ namespace Flowar
 						if (contextType == ContextType.CardRotatedOverMap)
 						{
 							//--- Affiche la case
-							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scale, currentCardRotation, centerCard);
+							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 							//---> Affiche les valeurs
-							DrawCaseValuesMap(caseCard, posCase, scale);
+							DrawCaseValuesMap(caseCard, posCase, scaleCardOverMap);
 						}
 						else
 						{
@@ -1323,28 +1330,28 @@ namespace Flowar
 							if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player != currentPlayer)
 							{
 								//--- Affiche la case
-								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), Color.Gray, posCard, posCase, scale);
+								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), Color.Gray, posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 								//---> Affiche les valeurs
-								DrawCaseValuesConflict(caseMap, caseCard, posCase, scale);
+								DrawCaseValuesConflict(caseMap, caseCard, posCase, scaleCardOverMap);
 							}
 							//---> Renfort
 							else if (caseCard != null && caseMap != null && caseMap.FlowerType != FlowerType.None && caseMap.Player == currentPlayer)
 							{
 								//--- Affiche la case
-								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scale);
+								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 								//---> Affiche les valeurs
-								DrawCaseValuesRenfort(caseMap, caseCard, posCase, scale);
+								DrawCaseValuesRenfort(caseMap, caseCard, posCase, scaleCardOverMap);
 							}
 							//---> Nouvelle installation
 							else
 							{
 								//--- Affiche la case
-								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scale, currentCardRotation, centerCard);
+								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 								//---> Affiche les valeurs
-								DrawCaseValuesMap(caseCard, posCase, scale);
+								DrawCaseValuesMap(caseCard, posCase, scaleCardOverMap);
 							}
 						}
 					}
@@ -1354,39 +1361,40 @@ namespace Flowar
 
 		private void DrawCardPuttingDown()
 		{
-			int width = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
-			int height = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
+			int width = currentPlayerCard.DrawingCaseValue.GetUpperBound(0) + 1;
+			int height = currentPlayerCard.DrawingCaseValue.GetUpperBound(1) + 1;
 
-			float scale = 1f;
-			Vector2 centerCase = new Vector2(caseSize / 2f);
+			int realWidth = cloneSelectedCard.DrawingCaseValue.GetUpperBound(0) + 1;
+			int realHeight = cloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
+
+			Vector2 vecDeltascaleCardPuttingDown = new Vector2(realWidth * caseSize, realHeight * caseSize) * (scaleCardPuttingDown - scaleMap) / 2f;
+
+			Color colorBorder = ListAllPlayerColor[currentPlayer];
+			Color colorBackground = GetColorFlower(currentPlayerCard.FlowerType);
+
+			Vector2 centerCard = new Vector2((currentPlayerCard.Center.X + 0.5f) * caseSize * scaleCardPuttingDown, (currentPlayerCard.Center.Y + 0.5f) * caseSize * scaleCardPuttingDown);
+			Vector2 centerRotatedCard = new Vector2((cloneSelectedCard.Center.X + 0.5f) * caseSize * scaleCardPuttingDown, (cloneSelectedCard.Center.Y + 0.5f) * caseSize * scaleCardPuttingDown);
 
 			for (int x = 0; x < width; x++)
 			{
 				for (int y = 0; y < height; y++)
 				{
-					int caseValue = cloneSelectedCard.DrawingCaseValue[x, y];
+					Vector2 posCard = posMap + vecPosSelectedCardOnMap + centerRotatedCard - vecDeltascaleCardPuttingDown;
+					Vector2 posCase = new Vector2(x * caseSize * scaleCardPuttingDown, y * caseSize * scaleCardPuttingDown);
 
-					if (caseValue >= 0)
+					Case caseCard = currentPlayerCard.Cases[x, y];
+
+					//Case caseMap = GetCaseMapFromRotatedCard(x + posSelectedCardOnMap.X, y + posSelectedCardOnMap.Y);
+
+					if (caseCard != null)
 					{
-						if (y * width + x == currentCasePuttingDown)
-							scale = scaleCasePuttingDown;
-						else
-							scale = 1f;
-
-						Vector2 posCase = new Vector2(x * caseSize * 1f, y * caseSize * 1f);
-						Vector2 posCard = posMap + vecPosSelectedCardOnMap;
-
-						Color colorBorder = ListAllPlayerColor[currentPlayer];
-						Color colorBackground = GetColorFlower(currentPlayerCard.FlowerType);
-
-						colorBorder.A = (byte)(255 - (byte)(255f * scale));
-						colorBackground.A = (byte)(255 - (byte)(255f * scale));
+						int caseValue = currentPlayerCard.DrawingCaseValue[x, y];
 
 						//--- Affiche la case
-						DrawCase(cloneSelectedCard.Cases[x, y], caseValue, colorBackground, colorBorder, posCard, posCase, 1f);
+						DrawCase(caseCard, caseValue, colorBackground, colorBorder, posCard, posCase, scaleCardPuttingDown, currentCardRotation, centerCard);
 
 						//---> Affiche les valeurs
-						DrawCaseValuesMap(cloneSelectedCard.Cases[x, y], posCase, 1f);
+						DrawCaseValuesMap(caseCard, posCase, scaleCardPuttingDown);
 					}
 				}
 			}
@@ -1528,10 +1536,13 @@ namespace Flowar
 				)
 			{
 				currentPlayerCard = playerCard;
+				oldCloneSelectedCard = currentPlayerCard.Clone();
+
 				contextType = ContextType.CardSelected;
 				InitCardValues(currentPlayerCard, CardType.Defenser);
 
-				CalcTabSelectedCard();
+				CalcTabRotatedCard();
+
 				return;
 			}
 
@@ -1568,7 +1579,8 @@ namespace Flowar
 			if (contextType == ContextType.CardOverMap ||
 				contextType == ContextType.CardRotatedOverMap)
 			{
-				oldCenterRotated = cloneSelectedCard.Center;
+				//oldCenterRotated = cloneSelectedCard.Center;
+				oldCloneSelectedCard = cloneSelectedCard.Clone();
 
 				CalcCardPositionOverMap(mouseState, triggerAnimation);
 			}

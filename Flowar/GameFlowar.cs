@@ -159,7 +159,7 @@ namespace Flowar
 
 		Vector2 vecPosSelectedCardOnMap = Vector2.Zero;
 
-		int durationCardAnimation = 300;
+		int durationCardAnimation = 500;
 		int durationCardPuttingDown = 175;
 
 		float scaleMap = 1f;
@@ -500,7 +500,7 @@ namespace Flowar
 			for (int i = 0; i <= numberCards; i++)
 			{
 				PlayerCard playerCard = new PlayerCard();
-				ModelCard modeCard = ListModelCard[rnd.Next(0, ListModelCard.Count)];
+				ModelCard modeCard = ListModelCard[rnd.Next(0, ListModelCard.Count)].Clone();
 
 				playerCard.Cases = modeCard.Cases;
 				playerCard.DrawingCaseValue = modeCard.DrawingCaseValue;
@@ -1161,7 +1161,7 @@ namespace Flowar
 							DrawCase(mapCase, caseValue, GetColorFlower(mapCase.FlowerType), ListAllPlayerColor[mapCase.Player], posCard, posCase, scale);
 
 							//---> Affiche les valeurs
-							DrawCaseValuesMap(mapCase, posMap + posCard, scale);
+							DrawCaseValuesMap(mapCase, posMap + posCard, posCase, scale, 0f, centerCase);
 						}
 					}
 				}
@@ -1322,7 +1322,7 @@ namespace Flowar
 							DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 							//---> Affiche les valeurs
-							DrawCaseValuesMap(caseCard, posCase, scaleCardOverMap);
+							DrawCaseValuesMap(caseCard, posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 						}
 						else
 						{
@@ -1351,7 +1351,7 @@ namespace Flowar
 								DrawCase(caseCard, caseValue, GetColorFlower(cloneSelectedCard.FlowerType), ListAllPlayerColor[currentPlayer], posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 
 								//---> Affiche les valeurs
-								DrawCaseValuesMap(caseCard, posCase, scaleCardOverMap);
+								DrawCaseValuesMap(caseCard, posCard, posCase, scaleCardOverMap, currentCardRotation, centerCard);
 							}
 						}
 					}
@@ -1394,7 +1394,7 @@ namespace Flowar
 						DrawCase(caseCard, caseValue, colorBackground, colorBorder, posCard, posCase, scaleCardPuttingDown, currentCardRotation, centerCard);
 
 						//---> Affiche les valeurs
-						DrawCaseValuesMap(caseCard, posCase, scaleCardPuttingDown);
+						DrawCaseValuesMap(caseCard, posCard, posCase, scaleCardPuttingDown, currentCardRotation, centerCard);
 					}
 				}
 			}
@@ -1448,19 +1448,51 @@ namespace Flowar
 
 		}
 
-		private void DrawCaseValuesMap(Case caseCard, Vector2 pos, float scale)
+		private void DrawCaseValuesMap(Case caseCard, Vector2 posCard, Vector2 posCase, float scale, float rotation, Vector2 center)
 		{
 			int width = (int)((float)caseSize * scale);
 			int height = (int)((float)caseSize * scale);
 
-			SpriteBatch.Begin();
+			Vector2 centerCase = new Vector2(width, height)/2f;
 
-			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusDefenser * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.15f, (float)caseSize * scale * 0.7f), Color.Black);
-			SpriteBatch.DrawString(fontCase, caseCard.Defenser.ToString(), pos + new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.7f), Color.Black);
-			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.MalusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), pos + new Vector2((float)caseSize * scale * 0.65f, (float)caseSize * scale * 0.7f), Color.Black);
+			Matrix mtxTransform =
+				Matrix.CreateTranslation(new Vector3(-center, 0f)) *
+				Matrix.CreateRotationZ(rotation) *
+				Matrix.CreateTranslation(new Vector3(posCard, 0f));
 
+			SpriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState, mtxTransform);
+
+
+			Matrix mtxTransform2 =
+				Matrix.CreateTranslation(new Vector3(-centerCase, 0f)) *
+				Matrix.CreateRotationZ(-rotation);
+
+			Vector2 vec1 = new Vector2((float)caseSize * scale * 1f, (float)caseSize * scale * 1f);
+			Vector2 vec2 = new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.65f);
+			Vector2 vec3 = new Vector2((float)caseSize * scale * 0.7f, (float)caseSize * scale * 0.65f);
+
+
+			vec1 = Vector2.Transform(vec1, mtxTransform2);
+			vec2 = Vector2.Transform(vec2, Matrix.CreateRotationZ(-rotation))-center*0;
+			vec3 = Vector2.Transform(vec3, Matrix.CreateRotationZ(-rotation))-center*0;
+
+			float r =  -rotation;
+			//Vector2 c = centerCase;
+			Vector2 c = Vector2.Zero; ;
+
+			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusDefenser * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), posCase + vec1, Color.Black,
+				r, c, Vector2.One, SpriteEffects.None, 0f);
+			
+			
+			//SpriteBatch.DrawString(fontCase, caseCard.Defenser.ToString(), posCase + vec2, Color.Black,
+			//    r, c, Vector2.One, SpriteEffects.None, 0f);
+
+			
+			//SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.MalusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), posCase+ vec3, Color.Black,
+			//    r, c, Vector2.One, SpriteEffects.None, 0f);
+
+			
 			SpriteBatch.End();
-
 		}
 
 		private void DrawCaseValuesConflict(Case caseMap, Case caseCard, Vector2 pos, float scale)

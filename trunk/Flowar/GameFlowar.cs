@@ -159,7 +159,7 @@ namespace Flowar
 
 		Vector2 vecPosSelectedCardOnMap = Vector2.Zero;
 
-		int durationCardAnimation = 500;
+		int durationCardAnimation = 100;
 		int durationCardPuttingDown = 175;
 
 		float scaleMap = 1f;
@@ -1455,41 +1455,45 @@ namespace Flowar
 
 			Vector2 centerCase = new Vector2(width, height)/2f;
 
+			//rotation = DateTime.Now.Millisecond/1000f;
+
 			Matrix mtxTransform =
-				Matrix.CreateTranslation(new Vector3(-center, 0f)) *
+				Matrix.CreateTranslation(new Vector3(-centerCase,0f)) *
+				Matrix.CreateRotationZ(-rotation) *
+				Matrix.CreateTranslation(new Vector3(posCase -center+centerCase, 0f))*
 				Matrix.CreateRotationZ(rotation) *
-				Matrix.CreateTranslation(new Vector3(posCard, 0f));
+				Matrix.CreateTranslation(new Vector3(posCard,0f));
 
 			SpriteBatch.Begin(SpriteBlendMode.AlphaBlend, SpriteSortMode.Immediate, SaveStateMode.SaveState, mtxTransform);
 
 
-			Matrix mtxTransform2 =
-				Matrix.CreateTranslation(new Vector3(-centerCase, 0f)) *
-				Matrix.CreateRotationZ(-rotation);
+			//Matrix mtxTransform2 =
+			//    Matrix.CreateTranslation(new Vector3(-centerCase, 0f)) *
+			//    Matrix.CreateRotationZ(-rotation);
 
-			Vector2 vec1 = new Vector2((float)caseSize * scale * 1f, (float)caseSize * scale * 1f);
-			Vector2 vec2 = new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.65f);
-			Vector2 vec3 = new Vector2((float)caseSize * scale * 0.7f, (float)caseSize * scale * 0.65f);
+			Vector2 vec1 = new Vector2((float)caseSize * scale * 0.15f, (float)caseSize * scale * 0.75f);
+			Vector2 vec2 = new Vector2((float)caseSize * scale * 0.4f, (float)caseSize * scale * 0.75f);
+			Vector2 vec3 = new Vector2((float)caseSize * scale * 0.75f, (float)caseSize * scale * 0.75f);
 
 
-			vec1 = Vector2.Transform(vec1, mtxTransform2);
-			vec2 = Vector2.Transform(vec2, Matrix.CreateRotationZ(-rotation))-center*0;
-			vec3 = Vector2.Transform(vec3, Matrix.CreateRotationZ(-rotation))-center*0;
+			//vec1 = Vector2.Transform(vec1, mtxTransform2);
+			//vec2 = Vector2.Transform(vec2, Matrix.CreateRotationZ(-rotation))-center*0;
+			//vec3 = Vector2.Transform(vec3, Matrix.CreateRotationZ(-rotation))-center*0;
 
-			float r =  -rotation;
+			float r = 0f; ;
 			//Vector2 c = centerCase;
 			Vector2 c = Vector2.Zero; ;
 
-			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusDefenser * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), posCase + vec1, Color.Black,
+			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.BonusDefenser * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), vec1, Color.LightGreen,
 				r, c, Vector2.One, SpriteEffects.None, 0f);
-			
-			
-			//SpriteBatch.DrawString(fontCase, caseCard.Defenser.ToString(), posCase + vec2, Color.Black,
-			//    r, c, Vector2.One, SpriteEffects.None, 0f);
 
-			
-			//SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.MalusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), posCase+ vec3, Color.Black,
-			//    r, c, Vector2.One, SpriteEffects.None, 0f);
+
+			SpriteBatch.DrawString(fontCase, caseCard.Defenser.ToString(), vec2, Color.LightGreen,
+			    r, c, Vector2.One, SpriteEffects.None, 0f);
+
+
+			SpriteBatch.DrawString(fontCase, Math.Round((double)(caseCard.MalusStricker * caseCard.Defenser), 0, MidpointRounding.AwayFromZero).ToString(), vec3, Color.LightGreen,
+			    r, c, Vector2.One, SpriteEffects.None, 0f);
 
 			
 			SpriteBatch.End();

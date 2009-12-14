@@ -91,19 +91,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Case.cs" />
+    <Compile Include="BaseCase.cs" />
     <Compile Include="ContextType.cs" />
     <Compile Include="CardType.cs" />
+    <Compile Include="RelayType.cs" />
     <Compile Include="FlowerType.cs" />
     <Compile Include="GameBase.cs" />
     <Compile Include="GameFlowar.cs" />
     <Compile Include="GameMenu.cs" />
     <Compile Include="Map.cs" />
+    <Compile Include="MapTile.cs" />
     <Compile Include="ModelCard.cs" />
+    <Compile Include="Player.cs" />
     <Compile Include="PlayerCard.cs" />
+    <Compile Include="PlayerCase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="GameMain.cs" />
+    <Compile Include="RelayCase.cs" />
     <Compile Include="Tools\ClickableImage.cs" />
     <Compile Include="Tools\ClickableText.cs" />
     <Compile Include="Tools\ClickableZone.cs" />

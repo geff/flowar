@@ -51,7 +51,7 @@ namespace Flowar
 			int width = Cases.GetUpperBound(0)+1;
 			int height = Cases.GetUpperBound(1)+1;
 
-			modelCard.Cases = new Case[width, height];
+			modelCard.Cases = new PlayerCase[width, height];
 			modelCard.DrawingCaseValue = new int[width, height];
 
 			for (int x = 0; x < width; x++)
@@ -60,7 +60,7 @@ namespace Flowar
 				{
 					if (this.Cases[x, y] != null)
 					{
-						modelCard.Cases[x, y] = new Case();
+						modelCard.Cases[x, y] = new PlayerCase();
 
 						modelCard.Cases[x, y].BonusDefenser = this.Cases[x, y].BonusDefenser;
 						modelCard.Cases[x, y].BonusStricker = this.Cases[x, y].BonusStricker;

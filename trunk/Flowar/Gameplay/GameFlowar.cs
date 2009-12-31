@@ -981,7 +981,7 @@ namespace Flowar
             PosSelectedCardOnMap = position;
         }
 
-        private Boolean AreCasesEqual(BaseCase initialCase, BaseCase[,] cases, int offsetX, int offsetY)
+        public Boolean AreCasesEqual(BaseCase initialCase, BaseCase[,] cases, int offsetX, int offsetY)
         {
             bool casesAreEqual = false;
 
@@ -995,8 +995,8 @@ namespace Flowar
                 if (initialCase is PlayerCase && offsetCase is PlayerCase)
                 {
                     if (offsetCase != null &&
-                        ((PlayerCase)initialCase).Player == ((PlayerCase)offsetCase).Player &&
-                        ((PlayerCase)initialCase).FlowerType == ((PlayerCase)offsetCase).FlowerType)
+                        ((PlayerCase)initialCase).Player == ((PlayerCase)offsetCase).Player) //&&
+                        //((PlayerCase)initialCase).FlowerType == ((PlayerCase)offsetCase).FlowerType)
                         casesAreEqual = true;
                 }
             }

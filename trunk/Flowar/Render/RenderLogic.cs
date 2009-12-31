@@ -128,8 +128,8 @@ namespace Flowar.Render
             //Projection = Matrix.CreateOrthographic(100,100, 0.01f, 5000.0f);
 
             View = Matrix.CreateTranslation(
-                -(float)this.gameEngine.Game.GraphicsDevice.Viewport.Width / 2+2*gameEngine.PosMap.X-20f,
-                (float)this.gameEngine.Game.GraphicsDevice.Viewport.Height / 2-gameEngine.PosMap.Y-28f,
+                -(float)this.gameEngine.Game.GraphicsDevice.Viewport.Width / 2 + 2 * gameEngine.PosMap.X - 20f,
+                (float)this.gameEngine.Game.GraphicsDevice.Viewport.Height / 2 - gameEngine.PosMap.Y - 28f,
                 -5f);
             ViewProjection = View * Projection;
             //---
@@ -743,10 +743,13 @@ namespace Flowar.Render
             //this.vertexBlobArray[0].Position.X = gameEngine.MouseState.X/10;
             //this.vertexBlobArray[0].Position.Y = -gameEngine.MouseState.Y/10;
 
-            int nbPlayerCase = gameEngine.Map.Cases.OfType<PlayerCase>().Count();
-            int playerCaseId = 0;
+            //int nbPlayerCase = gameEngine.Map.Cases.OfType<PlayerCase>().Count();
+            //int playerCaseId = 0;
 
-            vertexBlobArray = new VertexPositionColor[nbPlayerCase];
+            //vertexBlobArray = new VertexPositionColor[nbPlayerCase];
+
+            List<VertexPositionColor> listVertex = new List<VertexPositionColor>();
+            float delta = 0.5f;
 
             for (int y = 0; y < gameEngine.Map.Height; y++)
             {
@@ -763,11 +766,59 @@ namespace Flowar.Render
                         if (baseCase is PlayerCase)
                         {
                             PlayerCase playerCase = (PlayerCase)baseCase;
+                            bool blobCreated = false;
 
-                            vertexBlobArray[playerCaseId].Color = gameEngine.ListAllPlayerColor[playerCase.Player];
-                            vertexBlobArray[playerCaseId].Position = new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0);
+                            if (
+                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x - 1, y))//||
+                            //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x + 1, y))
+                            {
+                                listVertex.Add(new VertexPositionColor(new Vector3((x - delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                                //listVertex.Add(new VertexPositionColor(new Vector3((x+0.25f) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
 
-                            playerCaseId++;
+                                blobCreated = true;
+                            }
+
+                            if (
+                                //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x - 1, y) ||
+                              gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x + 1, y))
+                            {
+                                //listVertex.Add(new VertexPositionColor(new Vector3((x-0.25f) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                                listVertex.Add(new VertexPositionColor(new Vector3((x + delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+
+                                blobCreated = true;
+                            }
+
+                            if (
+                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y - 1))// ||
+                            //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y + 1))
+                            {
+
+                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y + delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                                //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y + 0.25f) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+
+                                blobCreated = true;
+                            }
+
+                            if (
+                                //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y - 1) ||
+                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y + 1))
+                            {
+
+                                //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y - 0.25f) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y - delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+
+                                blobCreated = true;
+                            }
+
+                            //if (!blobCreated)
+                            {
+                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+
+                                //vertexBlobArray[playerCaseId].Color = gameEngine.ListAllPlayerColor[playerCase.Player];
+                                //vertexBlobArray[playerCaseId].Position = new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0);
+                            }
+
+                            //playerCaseId++;
 
                             //int caseValue = gameEngine.Map.DrawingCaseValue[x, y];
 
@@ -786,6 +837,8 @@ namespace Flowar.Render
                     }
                 }
             }
+
+            vertexBlobArray = listVertex.ToArray();
 
             if (vertexBlobArray != null && vertexBlobArray.Length > 0)
             {
@@ -907,7 +960,7 @@ namespace Flowar.Render
             //--- BlobEffect 1
             blobEffect.Parameters["WorldViewProjection"].SetValue(ViewProjection);
             blobEffect.Parameters["Projection"].SetValue(Projection);
-            blobEffect.Parameters["ParticleSize"].SetValue(180);
+            blobEffect.Parameters["ParticleSize"].SetValue(110);
             blobEffect.Parameters["ViewportHeight"].SetValue((float)this.gameEngine.Game.GraphicsDevice.Viewport.Height);
             blobEffect.Parameters["GaussBlob"].SetValue(gaussianTex);
 

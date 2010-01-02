@@ -45,8 +45,8 @@ namespace Flowar.Render
         int GAUSSIANSIZE = 64;
         float GAUSSIANDEVIATION = 0.125f;
 
-        //VertexBlob[] vertexBlobArray;
-        VertexPositionColor[] vertexBlobArray;
+        VertexBlob[] vertexBlobArray;
+        //VertexPositionColor[] vertexBlobArray;
         //VertexPositionColor[] vertexBlobArrayTest;
 
         public VertexDeclaration vertexPosColDecl;
@@ -114,8 +114,7 @@ namespace Flowar.Render
             cubeTex = gameEngine.Game.Content.Load<TextureCube>(@"Content\Pic\LobbyCube");
 
             vertexPosColDecl = new VertexDeclaration(gameEngine.Game.GraphicsDevice,
-                VertexPositionColor.VertexElements);
-            //VertexBlob.VertexElements);
+                VertexBlob.VertexElements);
 
             //vertexPosColDecl = new VertexDeclaration(gameEngine.Game.GraphicsDevice,
             //    VertexPositionColor.VertexElements);
@@ -134,18 +133,18 @@ namespace Flowar.Render
             ViewProjection = View * Projection;
             //---
 
-            this.vertexBlobArray = new VertexPositionColor[2];
+            //this.vertexBlobArray = new VertexPositionColor[2];
             //this.vertexBlobArray = new VertexBlob[2];
 
-            this.vertexBlobArray[0].Color = Color.Orange;
+            //this.vertexBlobArray[0].Color = Color.Orange;
             //this.vertexBlobArray[0].PlayerColor = Color.Yellow;
 
             //this.vertexBlobArray[0].Size = 1f;
 
-            this.vertexBlobArray[1].Color = Color.Blue;
+            //this.vertexBlobArray[1].Color = Color.Blue;
             //this.vertexBlobArray[1].PlayerColor = Color.Yellow;
-            this.vertexBlobArray[1].Position.X = 1;// gameEngine.PosMap.X + gameEngine.CaseSize * 1.5f;
-            this.vertexBlobArray[1].Position.Y = 5;// gameEngine.PosMap.Y + gameEngine.CaseSize / 2;
+            //this.vertexBlobArray[1].Position.X = 1;// gameEngine.PosMap.X + gameEngine.CaseSize * 1.5f;
+            //this.vertexBlobArray[1].Position.Y = 5;// gameEngine.PosMap.Y + gameEngine.CaseSize / 2;
             //this.vertexBlobArray[1].Size = 0.75f;
 
             //ProjectionUI = Projection;
@@ -200,6 +199,36 @@ namespace Flowar.Render
 
 
             DrawBlob(gameTime);
+
+            for (int y = 0; y < gameEngine.Map.Height; y++)
+            {
+                for (int x = 0; x < gameEngine.Map.Width; x++)
+                {
+                    //if (!(gameEngine.Map.Cases[x, y] != null && gameEngine.Map.Cases[x, y].Player > 0))
+                    {
+                        BaseCase baseCase = this.gameEngine.Map.Cases[x, y];
+
+                        Vector2 posCard = new Vector2(x * gameEngine.CaseSize * gameEngine.ScaleMap, y * gameEngine.CaseSize * gameEngine.ScaleMap);
+
+                        SpriteBatch.Begin();
+
+                        if (baseCase is PlayerCase)
+                        {
+                            PlayerCase playerCase = (PlayerCase)baseCase;
+                            int caseValue = gameEngine.Map.DrawingCaseValue[x, y];
+
+                            if (caseValue >= 0)
+                            {
+                                //Vector2 posCard = gameEngine.posMap;
+                                Vector2 posCase = new Vector2(x * gameEngine.CaseSize * gameEngine.ScaleMap, y * gameEngine.CaseSize * gameEngine.ScaleMap);
+
+                                SpriteBatch.DrawString(fontCase, playerCase.NumberGrowingCase.ToString(), gameEngine.PosMap + posCase + new Vector2(gameEngine.CaseSize / 2), Color.Black);
+                            }
+                        }
+                        SpriteBatch.End();
+                    }
+                }
+            }
         }
 
         private void DrawMap()
@@ -747,93 +776,57 @@ namespace Flowar.Render
             //int playerCaseId = 0;
 
             //vertexBlobArray = new VertexPositionColor[nbPlayerCase];
-
-            List<VertexPositionColor> listVertex = new List<VertexPositionColor>();
+            //List<VertexPositionColor> listVertex = new List<VertexPositionColor>();
+            List<VertexBlob> listVertex = new List<VertexBlob>();
             float delta = 0.5f;
 
             for (int y = 0; y < gameEngine.Map.Height; y++)
             {
                 for (int x = 0; x < gameEngine.Map.Width; x++)
                 {
-                    //if (!(gameEngine.Map.Cases[x, y] != null && gameEngine.Map.Cases[x, y].Player > 0))
+                    BaseCase baseCase = this.gameEngine.Map.Cases[x, y];
+
+                    if (baseCase is PlayerCase)
                     {
-                        BaseCase baseCase = this.gameEngine.Map.Cases[x, y];
+                        PlayerCase playerCase = (PlayerCase)baseCase;
 
-                        //Vector2 posCard = new Vector2(x * gameEngine.CaseSize * gameEngine.ScaleMap, y * gameEngine.CaseSize * gameEngine.ScaleMap);
-                        //MapTile mapTile = gameEngine.ListMapTile[baseCase.TileId];
-                        //Texture2D texCase = ContentManager.Load<Texture2D>(String.Format(@"Content\Pic\{0}", mapTile.ContentName));
+                        float vertexSize = 1f;
 
-                        if (baseCase is PlayerCase)
+                        if (playerCase.GrowingCase)
+                            vertexSize = MathHelper.Lerp(playerCase.StartValueGrowingCase, playerCase.EndValueGrowingCase, playerCase.PercentageGrowingCase);
+                        else if (playerCase.NewCase)
+                            break;
+
+                        if(vertexSize>1f)
+                            vertexSize = 1f;
+
+                        if (gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x - 1, y))
                         {
-                            PlayerCase playerCase = (PlayerCase)baseCase;
-                            bool blobCreated = false;
+                            //listVertex.Add(new VertexPositionColor(new Vector3((x - delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
 
-                            if (
-                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x - 1, y))//||
-                            //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x + 1, y))
-                            {
-                                listVertex.Add(new VertexPositionColor(new Vector3((x - delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-                                //listVertex.Add(new VertexPositionColor(new Vector3((x+0.25f) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-
-                                blobCreated = true;
-                            }
-
-                            if (
-                                //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x - 1, y) ||
-                              gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x + 1, y))
-                            {
-                                //listVertex.Add(new VertexPositionColor(new Vector3((x-0.25f) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-                                listVertex.Add(new VertexPositionColor(new Vector3((x + delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-
-                                blobCreated = true;
-                            }
-
-                            if (
-                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y - 1))// ||
-                            //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y + 1))
-                            {
-
-                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y + delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-                                //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y + 0.25f) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-
-                                blobCreated = true;
-                            }
-
-                            if (
-                                //gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y - 1) ||
-                                gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y + 1))
-                            {
-
-                                //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y - 0.25f) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y - delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-
-                                blobCreated = true;
-                            }
-
-                            //if (!blobCreated)
-                            {
-                                listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
-
-                                //vertexBlobArray[playerCaseId].Color = gameEngine.ListAllPlayerColor[playerCase.Player];
-                                //vertexBlobArray[playerCaseId].Position = new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0);
-                            }
-
-                            //playerCaseId++;
-
-                            //int caseValue = gameEngine.Map.DrawingCaseValue[x, y];
-
-                            //if (caseValue >= 0)
-                            //{
-                            //    //Vector2 posCard = gameEngine.posMap;
-                            //    Vector2 posCase = new Vector2(x * gameEngine.CaseSize * gameEngine.ScaleMap, y * gameEngine.CaseSize * gameEngine.ScaleMap);
-
-                            //    //--- Affiche la case
-                            //    DrawCase(playerCase, caseValue, GetColorFlower(playerCase.FlowerType), gameEngine.ListAllPlayerColor[playerCase.Player], gameEngine.PosMap, posCase, gameEngine.ScaleMap);
-
-                            //    //---> Affiche les valeurs
-                            //    DrawCaseValuesMap(playerCase, gameEngine.PosMap + gameEngine.PosMap, posCase, gameEngine.ScaleMap, 0f, centerCase);
-                            //}
+                            listVertex.Add(new VertexBlob(new Vector3((x - delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), GetColorFlower(playerCase.FlowerType), vertexSize, gameEngine.ListAllPlayerColor[playerCase.Player]));
                         }
+
+                        if (gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x + 1, y))
+                        {
+                            //listVertex.Add(new VertexPositionColor(new Vector3((x + delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                            listVertex.Add(new VertexBlob(new Vector3((x + delta) * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), GetColorFlower(playerCase.FlowerType), vertexSize, gameEngine.ListAllPlayerColor[playerCase.Player]));
+                        }
+
+                        if (gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y - 1))
+                        {
+                            //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y + delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                            listVertex.Add(new VertexBlob(new Vector3(x * gameEngine.CaseSize, (-y + delta) * gameEngine.CaseSize, 0), GetColorFlower(playerCase.FlowerType), vertexSize, gameEngine.ListAllPlayerColor[playerCase.Player]));
+                        }
+
+                        if (gameEngine.AreCasesEqual(baseCase, this.gameEngine.Map.Cases, x, y + 1))
+                        {
+                            //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, (-y - delta) * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                            listVertex.Add(new VertexBlob(new Vector3(x * gameEngine.CaseSize, (-y - delta) * gameEngine.CaseSize, 0), GetColorFlower(playerCase.FlowerType), vertexSize, gameEngine.ListAllPlayerColor[playerCase.Player]));
+                        }
+
+                        //listVertex.Add(new VertexPositionColor(new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), gameEngine.ListAllPlayerColor[playerCase.Player]));
+                        listVertex.Add(new VertexBlob(new Vector3(x * gameEngine.CaseSize, -y * gameEngine.CaseSize, 0), GetColorFlower(playerCase.FlowerType), vertexSize, gameEngine.ListAllPlayerColor[playerCase.Player]));
                     }
                 }
             }
@@ -960,7 +953,7 @@ namespace Flowar.Render
             //--- BlobEffect 1
             blobEffect.Parameters["WorldViewProjection"].SetValue(ViewProjection);
             blobEffect.Parameters["Projection"].SetValue(Projection);
-            blobEffect.Parameters["ParticleSize"].SetValue(110);
+            blobEffect.Parameters["ParticleSize"].SetValue(104);
             blobEffect.Parameters["ViewportHeight"].SetValue((float)this.gameEngine.Game.GraphicsDevice.Viewport.Height);
             blobEffect.Parameters["GaussBlob"].SetValue(gaussianTex);
 
@@ -975,7 +968,10 @@ namespace Flowar.Render
 
             //if (simpleVertex)
             //{
-            gameEngine.Game.GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.PointList,
+            //gameEngine.Game.GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.PointList,
+            //         vertexBlobArray, 0, vertexBlobArray.Length);
+
+            gameEngine.Game.GraphicsDevice.DrawUserPrimitives<VertexBlob>(PrimitiveType.PointList,
                      vertexBlobArray, 0, vertexBlobArray.Length);
             //}
             //else

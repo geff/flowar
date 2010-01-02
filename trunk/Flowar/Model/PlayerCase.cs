@@ -21,6 +21,14 @@ namespace Flowar
         public float BonusStricker { get; set; }
         public float MalusStricker { get; set; }
 
+        public int NumberGrowingCase { get; set; }
+        public float StartValueGrowingCase { get; set; }
+        public float EndValueGrowingCase { get; set; }
+        public float PercentageGrowingCase { get; set; }
+        public bool GrowingCase { get; set; }
+        public bool NewCase { get; set; }
+        public TimeSpan GrowingStartTime { get; set; }
+
         public PlayerCase()
             : base(0)
         {

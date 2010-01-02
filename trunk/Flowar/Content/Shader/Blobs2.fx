@@ -20,21 +20,25 @@ sampler_state
 struct VertexShaderInput
 {
     float4 Position	: POSITION0;
-    float3 Color	: COLOR;
+    float3 Color	: COLOR0;
+    float1 Size : PSIZE0;
+    float3 ColorPlayer	: COLOR1;
 };
 
 struct VertexShaderOutput
 {
 	float4 Position	: POSITION0;
-	float1 Size 		: PSIZE0;
-    float3 Color		: COLOR0;
+    float3 Color	: COLOR0;
+    float1 Size : PSIZE0;
+    float3 ColorPlayer	: COLOR1;
 };
 
 struct PixelShaderInput
 {
     float2 texCoord : TEXCOORD0;
-    float1 Size 		: PSIZE0;
-    float3 Color		: COLOR0;
+    float3 Color	: COLOR0;
+    float1 Size : PSIZE0;
+    float3 ColorPlayer	: COLOR1;
 };
 
 int ParticleSize;
@@ -46,8 +50,10 @@ VertexShaderOutput VertexShaderFunction(VertexShaderInput input)
     VertexShaderOutput output;
 
     output.Position = mul(input.Position, WorldViewProjection);
-    output.Size = ParticleSize * Projection._m11 / output.Position.w * ViewportHeight / 2;
+    //output.Size = ParticleSize * Projection._m11 / output.Position.w * ViewportHeight / 2;
+    output.Size = ParticleSize * input.Size * Projection._m11 / output.Position.w * ViewportHeight / 2;
     output.Color = input.Color;
+    output.ColorPlayer = input.ColorPlayer;
     
     return output;
 }
@@ -92,10 +98,12 @@ PixelShaderOutput PixelShaderFunction(PixelShaderInput Input)
                                 1);
     NormalData *= weight.r;
     
-    float4 ColorData = float4(Input.Color.r,
-                               Input.Color.g,
-                               Input.Color.b,
+    
+    float4 ColorData = float4(Input.ColorPlayer.r,
+                               Input.ColorPlayer.g,
+                               Input.ColorPlayer.b,
                                0);
+                               
     ColorData *= weight.r;
     
     //NormalData = float4(1,0,0,1);

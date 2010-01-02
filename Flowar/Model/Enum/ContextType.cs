@@ -9,9 +9,11 @@ namespace Flowar.Model.Enum
     {
         None = 0,
         CardSelected = 1,
-		CardRotated =2,
-		CardOverMap = 3,
-		CardRotatedOverMap = 4,
-		PutDownCard = 5,
+        CardRotated = 2,
+        CardOverMap = 3,
+        CardRotatedOverMap = 4,
+        PutDownCard = 5,
+        GrowingCase = 6,
+        NextPlayerToPlay = 7,
     }
 }

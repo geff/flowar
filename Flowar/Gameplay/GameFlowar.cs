@@ -173,6 +173,13 @@ namespace Flowar
         public Dictionary<int, MapTile> ListMapTile { get; set; }
 
         private const int TILE_ID_GRASS = 1000;
+
+        public List<Point> ListPlayerBasePosition { get; set; }
+
+        private int mapWidth;
+        private int mapHeight;
+
+        private int curNumberCaseGrowing;
         #endregion
 
         RenderLogic renderLogic;
@@ -207,7 +214,6 @@ namespace Flowar
             this.AddClickableZone(txtNewMap);
 
             //---
-
             this.AddKeys(Keys.P);
 
             //--- Chargement des images de la carte
@@ -227,6 +233,11 @@ namespace Flowar
             //---
 
             //---
+            mapWidth = 10;
+            mapHeight = 10;
+            //---
+
+            //---
             rnd = new Random();
             this.ShowMiniMenu = true;
             ListAllPlayerCard = new Dictionary<int, List<PlayerCard>>();
@@ -236,6 +247,14 @@ namespace Flowar
             ListAllPlayerColor.Add(1, Color.Orange);
             ListAllPlayerColor.Add(2, Color.Coral);
             ListAllPlayerColor.Add(3, Color.SteelBlue);
+            //---
+
+            //--- Position des bases des joueurs
+            ListPlayerBasePosition = new List<Point>();
+
+            ListPlayerBasePosition.Add(new Point(0, 0));
+            ListPlayerBasePosition.Add(new Point(mapWidth - 1, 0));
+            ListPlayerBasePosition.Add(new Point(mapWidth - 1, mapHeight - 1));
             //---
 
 
@@ -397,11 +416,87 @@ namespace Flowar
                 {
                     CalcMapAfterCardPuttingDown();
 
-                    NextPlayerToPlay();
+                    //NextPlayerToPlay();
                 }
             }
 
+            if (ContextType == ContextType.GrowingCase)
+            {
+                UpdateGrowingCase(gameTime, CurrentPlayer, 0.005f);
+            }
+
+            if (ContextType == ContextType.NextPlayerToPlay)
+            {
+                NextPlayerToPlay();
+            }
+
             base.Update(gameTime);
+        }
+
+        private void UpdateGrowingCase(GameTime gameTime, int player, float speedGrowing)
+        {
+            bool areCaseGrowing = false;
+
+            for (int x = 0; x < Map.Width; x++)
+            {
+                for (int y = 0; y < Map.Height; y++)
+                {
+                    if (Map.Cases[x, y] is PlayerCase &&
+                        ((PlayerCase)Map.Cases[x, y]).Player == player &&
+                        ((PlayerCase)Map.Cases[x, y]).GrowingCase)
+                    {
+                        areCaseGrowing = true;
+
+                        PlayerCase playerCase = (PlayerCase)Map.Cases[x, y];
+
+                        if (playerCase.GrowingStartTime == TimeSpan.Zero)
+                            playerCase.GrowingStartTime = gameTime.TotalGameTime;
+
+                        //--- Met à jour le pourcentage d'avancement de la croissance
+                        playerCase.PercentageGrowingCase =
+                            (float)gameTime.TotalGameTime.Subtract(playerCase.GrowingStartTime).TotalMilliseconds *
+                            speedGrowing /
+                            Math.Abs(playerCase.StartValueGrowingCase - playerCase.EndValueGrowingCase);
+                        //---
+
+                        //--- Si la croissance est terminée, passe aux cases voisines
+                        if (playerCase.PercentageGrowingCase >= 1f)
+                        {
+                            playerCase.PercentageGrowingCase = 1f;
+                            playerCase.GrowingCase = false;
+                            playerCase.NewCase = false;
+
+                            for (int x2 = -1; x2 < 2; x2++)
+                            {
+                                for (int y2 = -1; y2 < 2; y2++)
+                                {
+                                    if ((x2 == 0 || y2 == 0) &&
+                                        x + x2 >= 0 && x + x2 < Map.Width &&
+                                        y + y2 >= 0 && y + y2 < Map.Height)
+                                    {
+                                        Point curPoint = new Point(x + x2, y + y2);
+
+                                        if (Map.Cases[curPoint.X, curPoint.Y] is PlayerCase &&
+                                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).Player == player &&
+                                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).NewCase)
+                                        {
+                                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).GrowingCase = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        //---
+                    }
+                }
+            }
+
+            //--- Si aucune case n'est en cours de croissance passe à l'état suivant
+            if (!areCaseGrowing)
+            {
+                ContextType = ContextType.NextPlayerToPlay;
+            }
+            //---
         }
 
         private void StartGame()
@@ -424,14 +519,11 @@ namespace Flowar
 
         private void CreateMap()
         {
-            int width = 10;
-            int height = 10;
+            this.Map = new Map(mapWidth, mapHeight);
 
-            this.Map = new Map(width, height);
-
-            for (int x = 0; x < width; x++)
+            for (int x = 0; x < Map.Width; x++)
             {
-                for (int y = 0; y < height; y++)
+                for (int y = 0; y < Map.Height; y++)
                 {
                     //---> Recouvre le terrain d'herbe
                     this.Map.Cases[x, y] = new BaseCase(TILE_ID_GRASS);
@@ -440,7 +532,7 @@ namespace Flowar
 
             //=== Calcul de la position de la rivière
 
-            //---> Le début de la rivière est dans le deuxième cart de la carte
+            //---> Le début de la rivière est dans le deuxième quart de la carte
             int riverStart = rnd.Next((int)((float)this.Map.Width * 0.25f), this.Map.Width / 2 + 1);
 
             //---> La fin de la rivière est dans le troisième quart de la carte
@@ -456,7 +548,7 @@ namespace Flowar
                 riverYCorner[i] = rnd.Next(this.Map.Width / numberOfRiverCorner * i, this.Map.Width / numberOfRiverCorner * (i + 1));
             }
 
-            for (int y = 0; y < height; y++)
+            for (int y = 0; y < Map.Height; y++)
             {
                 //---> Pose la rivière sur la carte
                 if (riverYCorner.Contains<int>(y))
@@ -494,6 +586,18 @@ namespace Flowar
                         relayCasePositionFound = true;
                     }
                 }
+            }
+            //---
+
+            //--- Création des bases des joueurs
+            for (int i = 0; i < ListPlayerBasePosition.Count; i++)
+            {
+                PlayerCase playerBaseCase = new PlayerCase();
+                playerBaseCase.TileId = TILE_ID_GRASS;
+                playerBaseCase.Player = i + 1;
+                playerBaseCase.FlowerType = FlowerType.Blue;
+
+                Map.Cases[ListPlayerBasePosition[i].X, ListPlayerBasePosition[i].Y] = playerBaseCase;
             }
             //---
 
@@ -1029,6 +1133,10 @@ namespace Flowar
             int height = CloneSelectedCard.DrawingCaseValue.GetUpperBound(1) + 1;
             //---
 
+            //--- Position de la première case de la carte à faire grossir
+            //Point firstCaseCard = new Point(-1, -1);
+            //---
+
             //--- Calcul de la position de la case
             //int y = (currentCasePuttingDown) / width;
             //int x = (currentCasePuttingDown) - y * width;
@@ -1047,6 +1155,8 @@ namespace Flowar
 
                     float finalCardValue = 0f;
                     int finalPlayer = 0;
+                    float startGrowingValue = 0f;
+
                     FlowerType finalFlowerType = FlowerType.None;
 
                     if (caseCard != null)
@@ -1080,10 +1190,14 @@ namespace Flowar
                                     finalPlayer = caseMapPlayer.Player;
                                     finalFlowerType = caseMapPlayer.FlowerType;
                                 }
+
+                                startGrowingValue = finalCardValue;
                             }
                             //---> Renfort
                             else if (caseCard != null && caseMap != null && caseMapPlayer.FlowerType != FlowerType.None && caseMapPlayer.Player == CurrentPlayer)
                             {
+                                startGrowingValue = caseMapPlayer.Defenser;
+
                                 finalCardValue = caseMapPlayer.Defenser + caseCard.Defenser;
                                 finalPlayer = caseMapPlayer.Player;
                                 finalFlowerType = caseMapPlayer.FlowerType;
@@ -1110,28 +1224,164 @@ namespace Flowar
                             caseMapPlayer.Player = CurrentPlayer;
                             caseMapPlayer.Stricker = caseCard.Stricker;
                             //---
+
+                            startGrowingValue = 0f;
                         }
 
                         //--- Affecte les nouvelles valeurs de la carte
                         this.Map.Cases[x + PosSelectedCardOnMap.X, y + PosSelectedCardOnMap.Y] = caseMapPlayer;
 
+                        caseMapPlayer.StartValueGrowingCase = startGrowingValue / 100f;
+
                         caseMapPlayer.TileId = caseMap.TileId;
                         caseMapPlayer.Defenser = finalCardValue;
                         caseMapPlayer.FlowerType = finalFlowerType;
                         caseMapPlayer.Player = finalPlayer;
+
+                        caseMapPlayer.EndValueGrowingCase = caseMapPlayer.Defenser/100f;
+                        caseMapPlayer.PercentageGrowingCase = 0f;
+                        caseMapPlayer.NumberGrowingCase = -1;
+                        caseMapPlayer.NewCase = true;
+                        caseMapPlayer.GrowingStartTime = TimeSpan.Zero;
+
                         //TODO : mettrer les number flower
                         //--- 
+
+                        //---
+                        //if (firstCaseCard.X == -1 && firstCaseCard.Y == -1)
+                        //{
+                        //    firstCaseCard = new Point(x, y);
+                        //}
+                        //---
                     }
                 }
 
-
                 //--- Calcul la valeur de la bordure
-                int[,] drawingCaseValue = Map.DrawingCaseValue;
-                CalcDrawingCaseValue(Map.Cases, ref drawingCaseValue);
-                Map.DrawingCaseValue = drawingCaseValue;
-
+                //int[,] drawingCaseValue = Map.DrawingCaseValue;
+                //CalcDrawingCaseValue(Map.Cases, ref drawingCaseValue);
+                //Map.DrawingCaseValue = drawingCaseValue;
 
                 //---
+            }
+
+            //--- Calcul l'ordre de croissance des cases
+            CalcMapGrowingCase(CloneSelectedCard.Player);
+            //---
+        }
+
+        private void CalcMapGrowingCase(int player)
+        {
+            //--- Position de la base du joueur
+            Point basePlayer = ListPlayerBasePosition[player - 1];
+            //---
+
+            //--- Réinitialise l'ordre de croissance du joueur
+            List<PlayerCase> listPlayerCase = Map.Cases.OfType<PlayerCase>().Where(c => c.Player == player).ToList();
+
+            foreach (PlayerCase playerCase in listPlayerCase)
+            {
+                playerCase.NumberGrowingCase = -1;
+            }
+
+            //---> La base du joueur a une valeur de croissance de 0
+            ((PlayerCase)Map.Cases[basePlayer.X, basePlayer.Y]).NumberGrowingCase = 0;
+            //---
+
+            //--- Calcul de l'ordre de croissance des cases du joueur
+            CalcNeighbourGrowingCaseOrder(player, basePlayer);
+            //---
+
+            //--- Initialise la croissance des cases
+            curNumberCaseGrowing = -1;
+            //---
+
+            //--- Calcul de la prochaine case qui va croître
+            CalcNextCaseGrowing();
+            //---
+
+            //--- Change l'état du contexte
+            ContextType = ContextType.GrowingCase;
+            //---
+        }
+
+        private void CalcNeighbourGrowingCaseOrder(int player, Point parentPoint)
+        {
+            //--- Récupère la valeur de la case courante
+            int parentNumberGrowingCase = ((PlayerCase)Map.Cases[parentPoint.X, parentPoint.Y]).NumberGrowingCase;
+            //---
+
+            for (int x = -1; x < 2; x++)
+            {
+                for (int y = -1; y < 2; y++)
+                {
+                    if ((x == 0 || y == 0) &&
+                        parentPoint.X + x >= 0 && parentPoint.X + x < Map.Width &&
+                        parentPoint.Y + y >= 0 && parentPoint.Y + y < Map.Height)
+                    {
+                        Point curPoint = new Point(parentPoint.X + x, parentPoint.Y + y);
+
+                        if (Map.Cases[curPoint.X, curPoint.Y] is PlayerCase &&
+                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).Player == player &&
+                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).NumberGrowingCase == -1)
+                        {
+                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).NumberGrowingCase = parentNumberGrowingCase + 1;
+                        }
+                    }
+                }
+            }
+
+            for (int x = -1; x < 2; x++)
+            {
+                for (int y = -1; y < 2; y++)
+                {
+                    if ((x == 0 || y == 0) &&
+                        parentPoint.X + x >= 0 && parentPoint.X + x < Map.Width &&
+                        parentPoint.Y + y >= 0 && parentPoint.Y + y < Map.Height)
+                    {
+                        Point curPoint = new Point(parentPoint.X + x, parentPoint.Y + y);
+
+                        if (Map.Cases[curPoint.X, curPoint.Y] is PlayerCase &&
+                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).Player == player &&
+                            ((PlayerCase)Map.Cases[curPoint.X, curPoint.Y]).NumberGrowingCase == parentNumberGrowingCase + 1)
+                        {
+                            //---> incrémente les valeurs de toutes les cases voisines
+                            CalcNeighbourGrowingCaseOrder(player, curPoint);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void CalcNextCaseGrowing()
+        {
+            int minimumDrawingCaseNumber = int.MaxValue;
+
+            for (int x = 0; x < Map.Width; x++)
+            {
+                for (int y = 0; y < Map.Height; y++)
+                {
+                    if (Map.Cases[x, y] is PlayerCase &&
+                        ((PlayerCase)Map.Cases[x, y]).NewCase &&
+                        ((PlayerCase)Map.Cases[x, y]).NumberGrowingCase < minimumDrawingCaseNumber)
+                    {
+                        minimumDrawingCaseNumber = ((PlayerCase)Map.Cases[x, y]).NumberGrowingCase;
+                    }
+                }
+            }
+
+            for (int x = 0; x < Map.Width; x++)
+            {
+                for (int y = 0; y < Map.Height; y++)
+                {
+                    if (Map.Cases[x, y] is PlayerCase &&
+                        ((PlayerCase)Map.Cases[x, y]).NewCase &&
+                        ((PlayerCase)Map.Cases[x, y]).NumberGrowingCase == minimumDrawingCaseNumber)
+                    {
+                        ((PlayerCase)Map.Cases[x, y]).GrowingCase = true;
+                    }
+
+                    //((PlayerCase)Map.Cases[x, y]).NewCase = false;
+                }
             }
         }
 

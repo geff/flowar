@@ -30,6 +30,6 @@ namespace Flowar.Render
                  new VertexElement(0, sizeof(float)*5, VertexElementFormat.Color, VertexElementMethod.Default, VertexElementUsage.Color, 1)
              };
 
-        public static int SizeInBytes = sizeof(float) * 5;
+        public static int SizeInBytes = 20;
     }
 }

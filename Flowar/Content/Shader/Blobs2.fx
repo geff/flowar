@@ -112,6 +112,12 @@ PixelShaderOutput PixelShaderFunction(PixelShaderInput Input)
     output.Color1 = NormalData;
     output.Color2 = ColorData;
     
+    if(Size == 0)
+    {
+        output.Color1.a = 1;
+        output.Color2.a = 1;
+    }
+    
     return output;
 }
 

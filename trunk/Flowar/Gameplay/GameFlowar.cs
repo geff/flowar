@@ -422,7 +422,7 @@ namespace Flowar
 
             if (ContextType == ContextType.GrowingCase)
             {
-                UpdateGrowingCase(gameTime, CurrentPlayer, 0.005f);
+                UpdateGrowingCase(gameTime, CurrentPlayer, 0.001f);
             }
 
             if (ContextType == ContextType.NextPlayerToPlay)
@@ -1098,8 +1098,13 @@ namespace Flowar
 
                 if (initialCase is PlayerCase && offsetCase is PlayerCase)
                 {
+                    PlayerCase pInitialiseCase = (PlayerCase)initialCase;
+                    PlayerCase pOffsetCase = (PlayerCase)offsetCase;
+
                     if (offsetCase != null &&
-                        ((PlayerCase)initialCase).Player == ((PlayerCase)offsetCase).Player) //&&
+                        pInitialiseCase.Player ==pOffsetCase.Player &&
+                        !(pOffsetCase.NewCase && !pOffsetCase.GrowingCase)
+                        )
                         //((PlayerCase)initialCase).FlowerType == ((PlayerCase)offsetCase).FlowerType)
                         casesAreEqual = true;
                 }

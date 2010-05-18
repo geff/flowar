@@ -12,21 +12,42 @@ namespace AStar
     public partial class Form1 : Form
     {
         public List<Cell> ListCell { get; set; }
-        int nmbCell = 300;
+        int nmbCell = 500;
         int distanceMax = 60;
 
         Cell cellStart = null;
         Cell cellEnd = null;
 
+        List<Color> ListColor = new List<Color>();
+
         public Form1()
         {
             InitializeComponent();
-
+            this.WindowState = FormWindowState.Maximized;
+            this.MouseWheel += new MouseEventHandler(Form1_MouseWheel);
             Init();
+        }
+
+        void Form1_MouseWheel(object sender, MouseEventArgs e)
+        {
+            distanceMax += e.Delta / 12;
+
+            this.Text = distanceMax.ToString();
+
+            CalcNeighbourgh();
+
+            btnCalcPath.PerformClick();
         }
 
         private void Init()
         {
+            ListColor = new List<Color>();
+
+            ListColor.Add(Color.Blue);
+            ListColor.Add(Color.Red);
+            ListColor.Add(Color.Green);
+            ListColor.Add(Color.Violet);
+
             CreateCells();
 
             CalcNeighbourgh();
@@ -49,6 +70,11 @@ namespace AStar
 
         private void CalcNeighbourgh()
         {
+            foreach (Cell cell1 in ListCell)
+            {
+                cell1.ListNeighbour = new List<Cell>();
+            }
+
             foreach (Cell cell1 in ListCell)
             {
                 foreach (Cell cell2 in ListCell)
@@ -74,6 +100,9 @@ namespace AStar
             ListCellOpen = new List<AStarCell>();
             ListCellClose = new List<AStarCell>();
             List<Cell> listCellPath = new List<Cell>();
+
+            if (cellStart == null || cellEnd == null)
+                return listCellPath;
 
             //--- Ajout de la case de départ
             AStarCell aStarCell = new AStarCell();
@@ -137,7 +166,11 @@ namespace AStar
 
                     if (useCost && cell.Cost < costMax)
                     {
-                        aStarCell.F = (int)((float)aStarCell.F *cell.Cost);
+                        aStarCell.F = (int)((float)aStarCell.F * (1f-cell.Cost));
+                    }
+                    else if (useCost)
+                    {
+                        continue;
                     }
 
                     if (aStarCellPrev != null && aStarCell.G < aStarCellPrev.G)
@@ -195,14 +228,19 @@ namespace AStar
         {
             Random rnd = new Random();
 
-            Graphics g = this.CreateGraphics();
+            Graphics g2 = this.CreateGraphics();
+
+            Bitmap bmp = new Bitmap(this.Width, this.Height);
+            Graphics g = Graphics.FromImage(bmp);
+
             g.Clear(Color.White);
+
             foreach (Cell cell in ListCell)
             {
-                foreach (Cell cell2 in cell.ListNeighbour)
-                {
-                    g.DrawLine(Pens.LightBlue, cell.Position, cell2.Position);
-                }
+                //foreach (Cell cell2 in cell.ListNeighbour)
+                //{
+                //    g.DrawLine(Pens.LightBlue, cell.Position, cell2.Position);
+                //}
 
                 //g.DrawEllipse(Pens.LightGray, cell.Position.X - cell.Cost * 7, cell.Position.Y - cell.Cost * 7, cell.Cost * 15, cell.Cost * 15);
                 g.FillEllipse(Brushes.LightGray, cell.Position.X - cell.Cost * 7, cell.Position.Y - cell.Cost * 7, cell.Cost * 15, cell.Cost * 15);
@@ -218,15 +256,37 @@ namespace AStar
                 }
             }
 
+            int j = 0;
             foreach (List<Cell> listCellPath in listsCellPath)
             {
-                Pen pen = new Pen(Color.FromArgb(rnd.Next(255), rnd.Next(255), rnd.Next(255)), 2f);
-
+                //Pen pen = new Pen(Color.FromArgb(rnd.Next(255), rnd.Next(255), rnd.Next(255)), 2f);
+                Pen pen = new Pen(ListColor[j], 0f + 3f*((float)listsCellPath.Length-(float)j));
+                j++;
                 for (int i = 0; i < listCellPath.Count - 1; i++)
                 {
                     g.DrawLine(pen, listCellPath[i].Position, listCellPath[i + 1].Position);
                 }
             }
+
+            g2.DrawImage(bmp,new Point(0,0));
+        }
+
+        private Cell FoundNearestCell(Point position)
+        {
+            int minDistance = int.MaxValue;
+            Cell curCell = null;
+
+            foreach (Cell cell in ListCell)
+            {
+                int curDistance = Distance(cell.Position, position);
+                if (curDistance < minDistance)
+                {
+                    minDistance = curDistance;
+                    curCell = cell;
+                }
+            }
+
+            return curCell;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -247,19 +307,8 @@ namespace AStar
                 return;
             }
 
-            int minDistance = int.MaxValue;
-            Cell curCell = null;
-
-            foreach (Cell cell in ListCell)
-            {
-                int curDistance = Distance(cell.Position, e.Location);
-                if (curDistance < minDistance)
-                {
-                    minDistance = curDistance;
-                    curCell = cell;
-                }
-            }
-
+            Cell curCell = FoundNearestCell(e.Location);
+            
             if (e.Button == MouseButtons.Left)
             {
                 cellStart = curCell;
@@ -269,16 +318,31 @@ namespace AStar
                 cellEnd = curCell;
             }
 
-            Draw();
+            btnCalcPath.PerformClick();
         }
 
         private void btnCalcPath_Click(object sender, EventArgs e)
         {
-            List<Cell> ListCellPathWithoutCost = CalcPath(false,0f);
-            List<Cell> ListCellPathWithCost = CalcPath(true, 1f);
-            List<Cell> ListCellPathWithCostMax = CalcPath(true, 0.5f);
+            List<List<Cell>> ListCellPaths = new List<List<Cell>>();
 
-            Draw(ListCellPathWithoutCost, ListCellPathWithCost, ListCellPathWithCostMax);
+            ListCellPaths.Add(CalcPath(false, 0f));
+            ListCellPaths.Add(CalcPath(true, 1f));
+            ListCellPaths.Add(CalcPath(true, 0.75f));
+            ListCellPaths.Add(CalcPath(true, 0.1f));
+
+            Draw(ListCellPaths.ToArray());
+        }
+
+        private void Form1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (cellStart != null)
+            {
+                Cell curCell = FoundNearestCell(e.Location);
+
+                cellEnd = curCell;
+
+                btnCalcPath.PerformClick();
+            }
         }
     }
 }

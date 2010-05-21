@@ -48,9 +48,35 @@ namespace AStar
             ListColor.Add(Color.Green);
             ListColor.Add(Color.Violet);
 
-            CreateCells();
+            //CreateCells();
+            CreateCellsCircle();
 
             CalcNeighbourgh();
+        }
+
+        private void CreateCellsCircle()
+        {
+            ListCell = new List<Cell>();
+            ListCellClose = new List<AStarCell>();
+            ListCellOpen = new List<AStarCell>();
+
+            Random rnd = new Random();
+
+            int rayon = 0;
+            float angle = 0f;
+            float cost = 1f;
+            for (int i = 0; i < nmbCell; i++)
+            {
+                int x = this.Width / 2 + (int)(Math.Cos(angle) * (double)rayon);
+                int y = this.Height / 2 + (int)(Math.Sin(angle) * (double)rayon);
+
+                angle += (float)(Math.PI / 30);
+                rayon += 1;
+                cost = ((float)nmbCell - i) / (float)nmbCell;
+                Cell cell = new Cell(x,y, cost);
+
+                ListCell.Add(cell);
+            }
         }
 
         private void CreateCells()
@@ -237,10 +263,10 @@ namespace AStar
 
             foreach (Cell cell in ListCell)
             {
-                //foreach (Cell cell2 in cell.ListNeighbour)
-                //{
-                //    g.DrawLine(Pens.LightBlue, cell.Position, cell2.Position);
-                //}
+                foreach (Cell cell2 in cell.ListNeighbour)
+                {
+                    g.DrawLine(Pens.LightBlue, cell.Position, cell2.Position);
+                }
 
                 //g.DrawEllipse(Pens.LightGray, cell.Position.X - cell.Cost * 7, cell.Position.Y - cell.Cost * 7, cell.Cost * 15, cell.Cost * 15);
                 g.FillEllipse(Brushes.LightGray, cell.Position.X - cell.Cost * 7, cell.Position.Y - cell.Cost * 7, cell.Cost * 15, cell.Cost * 15);

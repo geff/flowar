@@ -36,9 +36,9 @@ namespace ThreadAStar.Model
             _backgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(backgroundWorker_RunWorkerCompleted);
 
             oConn = new ConnectionOptions();
-            oConn.Impersonation = ImpersonationLevel.Impersonate;
-            oConn.Authentication = AuthenticationLevel.PacketPrivacy;
-
+            oConn.Impersonation = ImpersonationLevel.Default;
+            oConn.Authentication = AuthenticationLevel.Unchanged;
+            
             oMs = new ManagementScope();
         }
 
@@ -62,10 +62,13 @@ namespace ThreadAStar.Model
                 if (newRefresh.Subtract(_lastRefresh).TotalMilliseconds >= _refreshRate)
                 {
                     _lastRefresh = newRefresh;
-
+                    
                     SurveyThreads();
 
+                    TimeSpan t = DateTime.Now.TimeOfDay.Subtract(newRefresh);
+
                     _ucMonitoring.RefreshGraph();
+                    //_ucMonitoring.label1.Text = "a";
                 }
             }
         }
@@ -74,17 +77,22 @@ namespace ThreadAStar.Model
         {
             int processId = Process.GetCurrentProcess().Id;
 
+            ProcessThread f;
+            f.tot
 
             foreach (ProcessThread thread in Process.GetCurrentProcess().Threads)
             {
-                string sQuery = String.Format("SELECT * FROM win32_PerfFormattedData_PerfProc_Thread WHERE IdProcess={0} and IdThread={1}",
+                string sQuery = String.Format("SELECT PercentProcessorTime FROM win32_PerfFormattedData_PerfProc_Thread WHERE IdProcess={0} and IdThread={1}",
                     processId, thread.Id);
 
+                
                 ObjectQuery oQuery = new ObjectQuery(sQuery);
                 ManagementObjectSearcher oSearcher = new ManagementObjectSearcher(oMs, oQuery);
                 ManagementObjectCollection oReturnCollection = oSearcher.Get();
 
-                ThreadData threadData = new ThreadData(); ;
+                
+                /*
+                 * ThreadData threadData = new ThreadData(); ;
 
                 if (ListThreadData.ContainsKey(thread.Id))
                 {
@@ -113,6 +121,7 @@ namespace ThreadAStar.Model
 
                     threadData.CPUAverage = (threadData.CPUAverage * (ulong)(threadData.CountRefresh - 1) + percentProcessorTime) / (ulong)threadData.CountRefresh;
                 }
+                 * */
             }
         }
 

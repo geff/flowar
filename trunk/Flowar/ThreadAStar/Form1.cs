@@ -34,6 +34,7 @@ namespace ThreadAStar
 
             //--- Démarre le monitoring de thread
             ucMonitoring.StartMonitoring();
+            //System.Threading.Monitor.Enter
             //---
 
             //--- Création du threadManager pour le type BackGroundworker

@@ -48,8 +48,8 @@ namespace AStar
             ListColor.Add(Color.Green);
             ListColor.Add(Color.Violet);
 
-            //CreateCells();
-            CreateCellsCircle();
+            CreateCells();
+            //CreateCellsCircle();
 
             CalcNeighbourgh();
         }

@@ -422,7 +422,7 @@ namespace Flowar
 
             if (ContextType == ContextType.GrowingCase)
             {
-                UpdateGrowingCase(gameTime, CurrentPlayer, 0.001f);
+                UpdateGrowingCase(gameTime, CurrentPlayer, 0.003f);
             }
 
             if (ContextType == ContextType.NextPlayerToPlay)
